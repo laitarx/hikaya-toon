@@ -1,0 +1,14 @@
+# never publish the product or secrets from this repo
+*.zip
+*.rar
+*.7z
+.env
+.env.*
+*.key
+*.pem
+node_modules/
+hikaya-toon/
+dist/
+.DS_Store
+Thumbs.db
+.claude/

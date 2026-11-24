@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; media-src 'self'; font-src 'self'; style-src 'self'; script-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<title>حكاية تون | مسلسل كرتون كامل لإنستقرام بالذكاء الاصطناعي</title>
+<meta name="description" content="أداة لـ Claude تصنع مسلسل كرتون عربي كامل لإنستقرام وتيك توك: الشخصيات والخلفيات والعدّادات والكابشن مرسومة بالكود، والصوت من ElevenLabs.">
+<meta property="og:title" content="حكاية تون">
+<meta property="og:description" content="أعطها فكرة، تطلع لك حلقة كرتون جاهزة للنشر.">
+<meta property="og:image" content="assets/poster.jpg">
+<link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="bar">
+  <a class="logo" href="#top">حكاية <span>تون</span></a>
+  <a class="btn btn-sm buy" href="#" data-buy>اشترِ الأداة · <b data-price></b></a>
+</header>
+
+<main id="top">
+
+<section class="hero wrap">
+  <div class="hero-text">
+    <p class="kicker">أداة لـ Claude Code والوكلاء الأذكياء</p>
+    <h1>مسلسل كرتون كامل<br>لحسابك، <em>بالكود</em></h1>
+    <p class="lead">أعطها فكرة حساب، وتطلع لك الشخصيات والقرية والعدّادات والكابشن والصوت، وحلقة جاهزة للنشر خلال دقائق. كل شي مرسوم بالكود، والشي الوحيد من برّا هو صوت ElevenLabs.</p>
+    <a class="btn buy big" href="#" data-buy>احصل على حكاية تون · <b data-price></b></a>
+    <p class="small">دفعة وحدة. ملف مضغوط يوصلك على إيميلك من Gumroad.</p>
+    <ul class="chips">
+      <li>1080 × 1920 · 30 fps</li><li>عربي من الأساس</li><li>حلقة 70 ثانية = رندر 25 ثانية</li><li>6 محركات رسم</li>
+    </ul>
+  </div>
+  <div class="phone">
+    <video id="heroVideo" src="assets/hero.mp4" poster="assets/poster.jpg" autoplay muted loop playsinline preload="metadata" disablepictureinpicture controlslist="nodownload noremoteplayback"></video>
+    <button class="sound" id="soundBtn" type="button">▶ شغّل الحلقة كاملة بالصوت</button>
+  </div>
+</section>
+
+<section class="wrap">
+  <p class="kicker">كيف تنصنع الحلقة</p>
+  <h2>أنت تقول الفكرة، والأداة تكمّل الباقي</h2>
+  <ol class="steps">
+    <li><span>1</span><h3>الفكرة والحساب</h3><p>تختار نوع المسلسل، وتطلع لك أسماء الحساب والبايو وصورة البروفايل وقصة 30 حلقة.</p></li>
+    <li><span>2</span><h3>السكربت</h3><p>هوك بأول ثانيتين، أعلى تعليق من أمس، حدث، مفاجأة، وسؤال واحد بالنهاية. باللهجة الخليجية أو أي لهجة.</p></li>
+    <li><span>3</span><h3>الصوت</h3><p>صوت ElevenLabs بأمر واحد، مع توقيت كل كلمة عشان الكابشن والفم يمشون مع الكلام.</p></li>
+    <li><span>4</span><h3>الرسم</h3><p>المشاهد والكاميرا والعدّادات والكومنتات تتحرك على الكلمة نفسها. تشوف لوحة لقطات قبل الرندر.</p></li>
+    <li><span>5</span><h3>الرندر والنشر</h3><p>فيديو MP4 بصوت مضبوط للجوال، مع الوصف والهاشتاقات ونص الغلاف وستوري التصويت.</p></li>
+  </ol>
+</section>
+
+<section class="wrap">
+  <p class="kicker">من حلقة حقيقية صنعتها الأداة</p>
+  <h2>كل اللي تشوفه هنا مرسوم بالكود</h2>
+  <div class="gallery">
+    <figure><img src="assets/hook.jpg" alt="الهوك" loading="lazy"><figcaption>هوك بأول ثانية</figcaption></figure>
+    <figure><img src="assets/family.jpg" alt="العائلة" loading="lazy"><figcaption>شخصيات خليجية</figcaption></figure>
+    <figure><img src="assets/rules.jpg" alt="القوانين" loading="lazy"><figcaption>قوانين اللعبة</figcaption></figure>
+    <figure><img src="assets/market.jpg" alt="السوق" loading="lazy"><figcaption>قرية وسوق ودكاكين</figcaption></figure>
+    <figure><img src="assets/city.jpg" alt="مدينة المتابعين" loading="lazy"><figcaption>كل متابع = بيت</figcaption></figure>
+    <figure><img src="assets/cta.jpg" alt="النهاية" loading="lazy"><figcaption>نهاية تجيب كومنتات</figcaption></figure>
+  </div>
+</section>
+
+<section class="wrap">
+  <p class="kicker">وش داخل الأداة</p>
+  <h2>استوديو كامل، مو قالب</h2>
+  <div class="grid">
+    <div class="card"><h3>🧍 شخصيات</h3><p>ثوب وشماغ وغترة وعباية وحجاب وتيشيرت. 12 تعبير و20 حركة، وفم يتحرك مع الصوت.</p></div>
+    <div class="card"><h3>🏘️ عوالم</h3><p>قرية من فوق، شارع، سوق، دكان، بيت ومجلس، مقهى، محطة قطار، مزرعة، ومدينة المتابعين بأعلام الدول.</p></div>
+    <div class="card"><h3>📊 عدّادات حيّة</h3><p>اليوم 1/30، الرصيد، السمعة... تعدّ وتنبض وتطلع "+1" على الكلمة اللي تنقال.</p></div>
+    <div class="card"><h3>💬 أدوات التفاعل</h3><p>كروت كومنتات، قوانين اللعبة، شاشة واتساب، أسئلة النهاية، و"الحلقة الجاية بكرة".</p></div>
+    <div class="card"><h3>🔤 كابشن عربي</h3><p>كلمة كلمة من اليمين لليسار، والكلمات المهمة بلون مختلف. بدون تقطيع حروف.</p></div>
+    <div class="card"><h3>🔊 مؤثرات صوتية</h3><p>بوب، عملة، ووش، تنبيه... مولّدة بالكود ومركّبة على كل حركة. ما تحتاج مكتبة أصوات.</p></div>
+    <div class="card"><h3>📈 خطة النمو</h3><p>تجهيز الحساب، روتين يومي، خطة 30 يوم، وش تراقب بالإحصائيات، و6 طرق للربح.</p></div>
+    <div class="card"><h3>📸 13 مهارة إنستقرام</h3><p>هوكات، وصف، بروفايل، ردود الكومنتات، بحث الريلز الناجحة، وتنظيف النص من أسلوب الذكاء الاصطناعي.</p></div>
+  </div>
+</section>
+
+<section class="wrap split">
+  <div>
+    <p class="kicker">6 أنواع حسابات</p>
+    <h2>نفس الأداة، أفكار مختلفة</h2>
+    <ul class="list">
+      <li><b>تحدي 30 يوم:</b> أنتم تقررون وأعلى تعليق يتنفّذ.</li>
+      <li><b>مدينة المتابعين:</b> كل متابع له بيت باسمه.</li>
+      <li><b>حياة القرية:</b> اقتصاد صغير وشخصيات تكبر مع الحساب.</li>
+      <li><b>وش تسوي لو:</b> قصص قصيرة تنتهي بخيار.</li>
+      <li><b>حقائق بالكرتون:</b> شرح مال وتاريخ وعلوم.</li>
+      <li><b>يوميات بيت:</b> عائلة ثابتة وموقف كل حلقة.</li>
+    </ul>
+  </div>
+  <div>
+    <p class="kicker">6 محركات رسم</p>
+    <h2>لكل أسلوب محرّكه</h2>
+    <ul class="list">
+      <li><b>الأساسي:</b> حلقات المسلسل اليومية.</li>
+      <li><b>كرتون مرسوم:</b> شخصيات عربية وخلفيات بإضاءة.</li>
+      <li><b>شرح علمي:</b> حيوانات وأرقام وعدّادات.</li>
+      <li><b>انسخ الأسلوب:</b> أعطه ريل، يسوي إعلانك بنفس الأسلوب.</li>
+      <li><b>ثلاثي الأبعاد:</b> قصص "في هذا العالم...".</li>
+      <li><b>سينمائي:</b> كروت مرسومة في عالم 3D.</li>
+    </ul>
+  </div>
+</section>
+
+<section class="wrap split">
+  <div class="card">
+    <h3>وش تحتاج</h3>
+    <ul class="list">
+      <li>كمبيوتر ويندوز أو ماك.</li>
+      <li>Node.js و Python و FFmpeg (كلها مجانية).</li>
+      <li>Claude Code باشتراكك الخاص (أو وكيل يقرأ ملفات المهارات).</li>
+      <li>حساب ElevenLabs للصوت، أو تسجّل بصوتك.</li>
+      <li>ساعة تقريباً لأول تركيب إذا الطرفية جديدة عليك.</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h3>وش مو داخل</h3>
+    <ul class="list">
+      <li>حسابات أو مفاتيح الذكاء الاصطناعي. تستخدم حقك.</li>
+      <li>الأصوات نفسها. تطلعها من ElevenLabs.</li>
+      <li>محرر بالسحب والإفلات. الشغل من الطرفية عن طريق Claude.</li>
+      <li>دعم شخصي أو تنفيذ حلقات لك.</li>
+    </ul>
+  </div>
+</section>
+
+<section class="wrap honest">
+  <p class="big-num">بصراحة</p>
+  <p>الأداة تصنع الفيديو، لكن الانتشار يعتمد على فكرتك والهوك والثبات بالنشر. ما نضمن مشاهدات أو متابعين أو دخل.</p>
+</section>
+
+<section class="wrap faq">
+  <p class="kicker">أسئلة قبل الشراء</p>
+  <h2>أسئلة شائعة</h2>
+  <details><summary>أقدر أربح من الفيديوهات اللي أسويها؟</summary><p>إيه. الفيديوهات ملكك، وتقدر تنشرها وتربح منها وتسوي فيها إعلانات.</p></details>
+  <details><summary>لازم أعرف برمجة؟</summary><p>لا. تكلّم Claude بالعربي وهو يشغّل الأوامر. بس لازم تركّب البرامج المجانية أول مرة.</p></details>
+  <details><summary>أقدر أغيّر الشخصيات والألوان؟</summary><p>إيه. كل شخصية تتحدد بسطور بسيطة (لون البشرة، الشعر، اللبس، العمر)، وتقدر تضيف خلفيات جديدة.</p></details>
+  <details><summary>أقدر أبيع الأداة أو أشاركها؟</summary><p>لا. الرخصة لاستخدامك الشخصي ولصنع فيديوهاتك. إعادة البيع أو المشاركة ممنوعة.</p></details>
+  <details><summary>كيف أستلم الأداة؟</summary><p>بعد الدفع في Gumroad يوصلك رابط التحميل على إيميلك مباشرة.</p></details>
+  <details><summary>هل الأداة تابعة لـ Anthropic أو ElevenLabs أو إنستقرام؟</summary><p>لا. أداة مستقلة تشتغل معها، وما هي تابعة لها ولا معتمدة منها.</p></details>
+</section>
+
+<section class="wrap final">
+  <h2>ابدأ مسلسلك اليوم</h2>
+  <a class="btn buy big" href="#" data-buy>احصل على حكاية تون · <b data-price></b></a>
+</section>
+
+</main>
+
+<footer class="wrap foot">
+  <p>حكاية تون 1.0</p>
+  <p data-email-row hidden>للتواصل: <a data-email href="#"></a></p>
+  <p class="small">مستقلة وغير تابعة لـ Anthropic أو ElevenLabs أو Meta أو Gumroad.</p>
+</footer>
+
+<div class="modal" id="modal" hidden>
+  <div class="modal-box">
+    <button class="close" id="closeBtn" type="button" aria-label="إغلاق">✕</button>
+    <video id="demoVideo" src="assets/demo.mp4" poster="assets/poster.jpg" controls playsinline preload="none" disablepictureinpicture controlslist="nodownload noremoteplayback noplaybackrate"></video>
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script src="site.js"></script>
+</body>
+</html>
