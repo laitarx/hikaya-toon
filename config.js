@@ -2,5 +2,5 @@
 window.SITE = {
   gumroadUrl: 'https://374397930834.gumroad.com/l/hikaya-toon',  // empty = buttons show "قريباً"
   price: '$49',              // shown on every buy button
-  email: '',                 // contact email shown in the footer (empty = hidden)
+  email: 'yusefai855@gmail.com', // contact email shown in the footer (empty = hidden)
 };
