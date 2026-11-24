@@ -62,6 +62,7 @@ a { color: inherit; }
 .gallery figcaption { text-align: center; font-weight: 600; font-size: 15px; margin-top: 6px; }
 
 .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+.grid.three { grid-template-columns: repeat(3, 1fr); }
 .split { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
 .list { padding-inline-start: 1.1em; margin: 0; }
 .list li { margin: .35em 0; }
@@ -87,12 +88,12 @@ a { color: inherit; }
   .hero, .split { grid-template-columns: 1fr; }
   .hero { gap: 28px; }
   .steps { grid-template-columns: 1fr; }
-  .grid { grid-template-columns: 1fr 1fr; }
+  .grid, .grid.three { grid-template-columns: 1fr 1fr; }
   .gallery { grid-template-columns: repeat(3, 1fr); }
   .wrap { padding: 40px 0; }
 }
 @media (max-width: 520px) {
-  .grid { grid-template-columns: 1fr; }
+  .grid, .grid.three { grid-template-columns: 1fr; }
   .gallery { grid-template-columns: repeat(2, 1fr); }
   .btn.big { font-size: 24px; padding: 12px 18px; }
   .bar .btn-sm { font-size: 17px; }
