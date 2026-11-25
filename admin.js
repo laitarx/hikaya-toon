@@ -169,17 +169,30 @@
       DATA.refs.map((r) => {
         const rev = (r.revenue_cents || 0) / 100; const link = siteBase + '?ref=' + r.code;
         return `<tr class="${r.active ? '' : 'muted'}" data-code="${esc(r.code)}"><td>${esc(r.name)}</td><td dir="ltr"><button class="link copy" data-link="${esc(link)}">${esc(link.replace(/^https?:\/\//, ''))} 📋</button></td>
-        <td>${fmt(r.visitors)}</td><td>${fmt(r.buy_clicks)}</td><td>${fmt(r.leads)}</td><td>${fmt(r.sales)}</td><td>$${rev.toFixed(0)}</td><td>$${((rev * r.commission_pct) / 100).toFixed(0)} (${esc(r.commission_pct)}%)</td>
-        <td>${r.visitors ? ((r.sales / r.visitors) * 100).toFixed(1) + '%' : '—'}</td><td><button class="link toggle">${r.active ? 'إيقاف' : 'تفعيل'}</button></td></tr>`;
+        <td>${fmt(r.visitors)}</td><td>${fmt(r.buy_clicks)}</td><td>${fmt(r.leads)}</td><td>${fmt(r.sales)}</td><td>$${rev.toFixed(0)}</td><td>$${((rev * r.commission_pct) / 100).toFixed(0)} (${esc(+r.commission_pct)}%) <button class="link pct" title="تعديل النسبة">✏️</button></td>
+        <td>${r.visitors ? ((r.sales / r.visitors) * 100).toFixed(1) + '%' : '—'}</td><td><button class="link toggle">${r.active ? 'إيقاف' : 'تفعيل'}</button> · <button class="link del">حذف</button></td></tr>`;
       }).join('');
   }
   $('refs').addEventListener('click', async (e) => {
     const b = e.target.closest('button'); if (!b) return;
     if (b.classList.contains('copy')) { navigator.clipboard.writeText(b.dataset.link).then(() => { b.textContent = 'تم النسخ ✓'; }); return; }
-    if (b.classList.contains('toggle')) {
-      const code = b.closest('tr').dataset.code; const r = DATA.refs.find((x) => x.code === code);
-      await api('ref_links?code=eq.' + encodeURIComponent(code), { method: 'PATCH', body: JSON.stringify({ active: !r.active }) }); load();
-    }
+    const code = b.closest('tr') && b.closest('tr').dataset.code; const r = DATA.refs.find((x) => x.code === code);
+    if (!r) return;
+    const where = 'ref_links?code=eq.' + encodeURIComponent(code);
+    try {
+      if (b.classList.contains('toggle')) {
+        await api(where, { method: 'PATCH', body: JSON.stringify({ active: !r.active }) }); load();
+      } else if (b.classList.contains('pct')) {
+        const v = prompt('نسبة عمولة ' + r.name + ' (' + code + ') الجديدة %', String(+r.commission_pct));
+        if (v === null) return;
+        const n = Number(String(v).replace('%', '').trim());
+        if (!Number.isFinite(n) || n < 0 || n > 100) { alert('اكتب رقم من 0 إلى 100'); return; }
+        await api(where, { method: 'PATCH', body: JSON.stringify({ commission_pct: n }) }); load();
+      } else if (b.classList.contains('del')) {
+        if (!confirm('حذف ' + r.name + ' (' + code + ') نهائياً؟\nالرابط يوقف، وزياراته ومبيعاته السابقة تبقى بس بدون اسمه. ما ينفع التراجع.')) return;
+        await api(where, { method: 'DELETE' }); load();
+      }
+    } catch (err) { alert(err.message); }
   });
   $('refForm').addEventListener('submit', async (e) => {
     e.preventDefault(); const f = e.target; $('refMsg').textContent = '';
