@@ -153,3 +153,18 @@ a { color: inherit; }
 .tthumbs img { width: 100%; aspect-ratio: 9/16; object-fit: cover; border: 3px solid var(--line); border-radius: 14px; display: block; pointer-events: none; }
 .tthumbs a[aria-current] img { border-color: var(--red); box-shadow: 0 0 0 3px var(--red); }
 .tthumbs a[aria-current] span { color: var(--red); }
+
+/* types v2: comfortable card row */
+.tcards { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(150px, 1fr); gap: 16px; overflow-x: auto; scroll-snap-type: x mandatory; padding: 6px 4px 18px; margin: 18px 0; scrollbar-width: thin; }
+.tcard { scroll-snap-align: start; text-decoration: none; display: grid; gap: 4px; background: var(--paper); border: 3px solid var(--line); border-radius: 22px; padding: 10px; box-shadow: 5px 5px 0 var(--line); transition: transform .15s; }
+.tcard:hover { transform: translateY(-4px); }
+.tcard[aria-current] { border-color: var(--red); box-shadow: 5px 5px 0 var(--red); }
+.tthumb { position: relative; display: block; }
+.tthumb img { width: 100%; height: auto; aspect-ratio: 4/5; object-position: 50% 30%; object-fit: cover; border-radius: 14px; display: block; pointer-events: none; }
+.tthumb i { position: absolute; inset: auto auto 10px 10px; width: 46px; height: 46px; border-radius: 50%; background: rgba(0,0,0,.65); color: #fff; display: grid; place-items: center; font-style: normal; font-size: 18px; }
+.tcard b { font-size: 18px; margin-top: 4px; }
+.tcard small { color: var(--muted); font-size: 14px; line-height: 1.4; }
+.tinfo3 { display: grid; grid-template-columns: 1fr 1fr 1.4fr; gap: 16px; }
+.tinfo3 h3 { color: var(--red); font-size: 26px; }
+@media (max-width: 1000px) { .tcards { grid-auto-columns: 180px; } .tinfo3 { grid-template-columns: 1fr; } }
+@media (max-width: 520px) { .tcards { grid-auto-columns: 150px; } }

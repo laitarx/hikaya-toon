@@ -80,14 +80,14 @@
     $('hChips').replaceChildren(...['ويندوز + أي وكيل ذكاء اصطناعي'].concat(T.chips).map((c) => Object.assign(document.createElement('li'), { textContent: c })));
     const hv = $('heroVideo');
     if (!hv.src.endsWith(T.full ? 'assets/hero.mp4' : T.video)) { hv.poster = T.full ? 'assets/poster.jpg' : T.poster; hv.src = T.full ? 'assets/hero.mp4' : T.video; hv.play().catch(() => {}); }
-    $('soundBtn').hidden = !T.full;
-    $('tName').textContent = T.icon + ' ' + T.name; $('tFits').textContent = T.fits; $('tEngine').textContent = T.engine;
+    hv.muted = true; $('soundBtn').textContent = T.full ? '▶ شغّل الحلقة كاملة بالصوت' : '🔊 شغّل بالصوت';
+    $('tFits').textContent = T.fits; $('tEngine').textContent = T.engine;
     $('tConnect').replaceChildren(...T.connect.map((k) => { const c = CONNECT[k]; const li = document.createElement('li');
       const b = document.createElement('b'); b.textContent = c.name; const sp = document.createElement('span'); sp.textContent = c.how;
       li.append(b, ' · ' + c.what, document.createElement('br'), sp); return li; }));
     document.querySelectorAll('#steps li p').forEach((p, i) => { if (T.steps[i]) p.textContent = T.steps[i]; });
     $('gallery').hidden = !['challenge', 'rise', 'city'].includes(T.key);
-    document.querySelectorAll('#typesBar a, .tthumbs a').forEach((a) => a.toggleAttribute('aria-current', a.dataset.type === T.key));
+    document.querySelectorAll('#typesBar a, .tcards a').forEach((a) => a.toggleAttribute('aria-current', a.dataset.type === T.key));
     const cur = document.querySelector('#typesBar a[aria-current]'); if (cur && why === 'click') cur.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' });
     document.title = T.key === 'challenge' ? base.title : T.name + ' | حكاية تون';
     if (why) ev('type_view', { t: T.key, by: why });
@@ -97,7 +97,7 @@
     const a = e.target.closest('a[data-type]'); if (!a) return;
     e.preventDefault(); applyType(a.dataset.type, 'click');
     const u = new URL(location.href); u.searchParams.set('type', a.dataset.type); history.replaceState(null, '', u.pathname + u.search);
-    if (!a.closest('#typesBar')) document.getElementById('top').scrollIntoView({ behavior: 'smooth' });
+    if (!a.closest('#typesBar')) { document.getElementById('top').scrollIntoView({ behavior: 'smooth' }); if (a.closest('.tcards')) playHero(); }
   });
   const typeParam = (params.get('type') || '').toLowerCase();
   if (TYPES.some((x) => x.key === typeParam)) applyType(typeParam, 'link');
@@ -147,7 +147,17 @@
   // ------------------------------------------------------------ demo modal
   const modal = document.getElementById('modal'); const demo = document.getElementById('demoVideo');
   let vStart = 0;
-  document.getElementById('soundBtn').addEventListener('click', () => { modal.hidden = false; demo.currentTime = 0; demo.play().catch(() => {}); ev('video_play'); });
+  const hero = document.getElementById('heroVideo');
+  function playHero() { const T = (window.HK_TYPES || []).find((x) => x.key === window.HK_TYPE) || {}; if (T.full) return;
+    hero.muted = false; hero.currentTime = 0; hero.loop = true; hero.play().catch(() => { hero.muted = true; hero.play().catch(() => {}); });
+    document.getElementById('soundBtn').textContent = '🔇 كتم الصوت'; ev('video_play', { t: window.HK_TYPE }); }
+  window.playHero = playHero;
+  hero.addEventListener('timeupdate', () => { if (!hero.muted) { videoSec = Math.max(videoSec, hero.currentTime); if (videoSec >= 8) raise(3); } });
+  document.getElementById('soundBtn').addEventListener('click', () => {
+    const T = (window.HK_TYPES || []).find((x) => x.key === window.HK_TYPE) || { full: true };
+    if (T.full) { modal.hidden = false; demo.currentTime = 0; demo.play().catch(() => {}); ev('video_play'); return; }
+    if (hero.muted) playHero(); else { hero.muted = true; document.getElementById('soundBtn').textContent = '🔊 شغّل بالصوت'; }
+  });
   demo.addEventListener('timeupdate', () => { videoSec = Math.max(videoSec, demo.currentTime); if (videoSec >= 10) raise(3); });
   demo.addEventListener('ended', () => ev('video_end', { s: Math.round(demo.duration) }));
   const close = () => { demo.pause(); modal.hidden = true; ping(); };
