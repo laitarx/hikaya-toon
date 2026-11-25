@@ -125,8 +125,19 @@
 
   // ------------------------------------------------------------ data
   let DATA = {};
+  // ---- remember this device (button in the header + the login checkbox)
+  function devLabel() { const d = DEV.get(); $('devBtn').textContent = d ? '📌 الجهاز محفوظ · ' + Math.max(1, Math.ceil((d.until - Date.now()) / 864e5)) + ' يوم' : '📌 تذكّر هذا الجهاز'; }
+  async function rememberDevice() {
+    try { if (!PRIV) throw new Error('nokey'); const ok = await DEV.store(sess, UID, PRIV); if (!ok) throw new Error('extractable'); }
+    catch (e) { alert('ما قدرت أحفظ الجهاز في هذا المتصفح (يمكن التصفح الخفي أو المتصفح يمنع التخزين).'); }
+    devLabel();
+  }
+  $('devBtn').addEventListener('click', async () => {
+    if (DEV.get()) { if (confirm('تبي تلغي حفظ هذا الجهاز؟ بيطلب كلمة المرور المرة الجاية.')) { DEV.clear(); devLabel(); } return; }
+    if (confirm('تحفظ هذا الجهاز 30 يوم؟ تدخل بدون كلمة مرور لين ما تسجّل خروج.\nلا تسويها في جهاز مشترك.')) await rememberDevice();
+  });
   async function load() {
-    if (!load.rem) { load.rem = true; if (PRIV && ($('loginForm').remember.checked || $('unlockForm').remember.checked)) DEV.store(sess, UID, PRIV).catch(() => {}); }
+    if (!load.rem) { load.rem = true; if (PRIV && ($('loginForm').remember.checked || $('unlockForm').remember.checked) && !DEV.get()) await rememberDevice(); devLabel(); }
     const days = +$('range').value; const since = new Date(Date.now() - days * 864e5).toISOString();
     const q = encodeURIComponent(since);
     const [sessions, visitors, leads, sales, refs, events, keyring, admins, affs, refRows] = await Promise.all([
