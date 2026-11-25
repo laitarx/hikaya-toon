@@ -181,6 +181,11 @@
   const recovering = HKRecover({ API, KEY, redirect: location.origin + location.pathname, forgotBtn: $('forgot'), emailField: $('loginForm').email, msg: $('loginMsg'), resetSection: $('reset'),
     onDone: async (tok, pw) => { keep(tok); await enter(pw); } });
   if (recovering) show('reset');
-  else if (!sess && DEV.get()) (async () => { const d = DEV.get(); save(d.sess); PRIV = await DEV.key(d.uid); if (!PRIV) DEV.clear(); await enter(); })().catch(() => { DEV.clear(); save(null); show('login'); });
+  else if (DEV.get()) (async () => {
+    const d = DEV.get(); if (!sess) save(d.sess);
+    if (uidOf(sess.at) === d.uid) PRIV = await DEV.key(d.uid);
+    if (!PRIV) DEV.clear();
+    await enter();
+  })().catch(() => { DEV.clear(); save(null); show('login'); });
   else if (sess) enter().catch(() => { save(null); show('login'); }); else show('login');
 })();

@@ -317,6 +317,12 @@
   const recovering = HKRecover({ API, KEY, redirect: location.origin + location.pathname, forgotBtn: $('forgot'), emailField: $('loginForm').email, msg: $('loginMsg'), resetSection: $('reset'),
     onDone: async (tok, pw) => { keep(tok); await enter(pw); } });
   if (recovering) $('login').hidden = true;
-  else if (!sess && DEV.get()) (async () => { const d = DEV.get(); save(d.sess); PRIV = await DEV.key(d.uid); if (!PRIV) DEV.clear(); await enter(); })().catch(() => { DEV.clear(); save(null); $('login').hidden = false; $('app').hidden = true; });
+  else if (DEV.get()) (async () => {
+    // remembered device: reuse the session (this tab's, or the stored one) and the saved decryption key
+    const d = DEV.get(); if (!sess) save(d.sess);
+    if (uidOf(sess.at) === d.uid) PRIV = await DEV.key(d.uid);
+    if (!PRIV) DEV.clear();
+    await enter();
+  })().catch(() => { DEV.clear(); save(null); $('login').hidden = false; $('app').hidden = true; });
   else if (sess) enter().catch((e) => { console.error(e); save(null); $('login').hidden = false; $('app').hidden = true; }); else $('login').hidden = false;
 })();
