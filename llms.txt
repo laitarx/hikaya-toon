@@ -27,3 +27,14 @@
 
 ## English summary
 Hikaya Toon writes the script, generates the voice with ElevenLabs, draws every frame in code (consistent characters, sets, live counters, right-to-left Arabic captions, sound effects) and renders a 1080x1920 MP4. Windows + any AI coding agent. One-time $49 with free updates and two free consulting calls. Not affiliated with Anthropic, OpenAI, ElevenLabs or Meta.
+
+## Video types Hikaya Toon makes (each has an original sample clip on the page, `?type=<key>`)
+- challenge: 30-day challenge series where the audience's top comment decides each episode.
+- rise: rise-from-zero story with a business decision per episode.
+- city: follower city, every new follower gets a named house.
+- weird: "In this world..." 3D blocky-avatar stories with a strange rule and a twist.
+- whatif: "If you were there" painted historical stories.
+- science: animal and science explainers with live numbers.
+- paper: tech / AI tool explainers in a paper-card UI style with a corner avatar.
+- brand: cartoon ads for a shop, cafe or app, copying the rhythm of a reference reel.
+Optional outside tools the agent may suggest when useful: Gemini, ChatGPT, Google Flow, Google AI Studio, Yusef Edit, Yusef Motion. ElevenLabs is the only required one (voice).

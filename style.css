@@ -129,3 +129,27 @@ a { color: inherit; }
 .en h2 { font-family: Lalezar, sans-serif; }
 @media (max-width: 900px) { .facts { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 520px) { .facts { grid-template-columns: 1fr; } .compare { font-size: 14px; } }
+
+/* video types */
+.types-bar { position: sticky; top: 61px; z-index: 9; display: flex; gap: 8px; overflow-x: auto; padding: 10px 16px; scrollbar-width: none;
+  background: color-mix(in srgb, var(--bg) 92%, transparent); backdrop-filter: blur(8px); border-bottom: 3px solid var(--line); }
+.types-bar::-webkit-scrollbar { display: none; }
+.types-bar a { flex: 0 0 auto; display: inline-flex; gap: 6px; align-items: center; text-decoration: none; font-weight: 600; font-size: 16px;
+  padding: 6px 14px; border: 2px solid var(--line); border-radius: 999px; background: var(--paper); white-space: nowrap; }
+.types-bar a[aria-current] { background: var(--red); color: #fff; box-shadow: 3px 3px 0 var(--line); }
+.tgrid { display: grid; grid-template-columns: minmax(300px, 1.1fr) 1fr; gap: 32px; align-items: start; }
+.phone.mini { width: 100%; border-radius: 30px; box-shadow: 7px 7px 0 var(--line); }
+.tinfo h3 { font-size: 24px; margin: 14px 0 2px; color: var(--red); }
+.tinfo p { margin: 0; }
+.connect { list-style: none; padding: 0; margin: 6px 0 10px; display: grid; gap: 10px; }
+.connect li { background: var(--paper); border: 2px solid var(--line); border-radius: 14px; padding: 10px 14px; font-size: 16px; }
+.connect b { color: var(--red); }
+.connect span { color: var(--muted); font-size: 15px; }
+.list a { text-decoration: none; }
+#hTitle, #hLead, .tpanel { transition: opacity .2s; }
+@media (max-width: 700px) { .tgrid { grid-template-columns: 1fr; }  .types-bar { top: 57px; } }
+.tthumbs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.tthumbs a { text-decoration: none; display: grid; gap: 4px; text-align: center; font-weight: 600; font-size: 14px; }
+.tthumbs img { width: 100%; aspect-ratio: 9/16; object-fit: cover; border: 3px solid var(--line); border-radius: 14px; display: block; pointer-events: none; }
+.tthumbs a[aria-current] img { border-color: var(--red); box-shadow: 0 0 0 3px var(--red); }
+.tthumbs a[aria-current] span { color: var(--red); }

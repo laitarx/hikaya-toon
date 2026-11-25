@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; font-src 'self'; style-src 'self'; script-src 'self'; connect-src https://*.supabase.co; object-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
+<meta name="referrer" content="no-referrer">
+<title>بوابة المسوّقين | حكاية تون</title>
+<link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="admin.css?v=3">
+<link rel="stylesheet" href="partner.css?v=1">
+</head>
+<body>
+
+<section id="login" class="center" hidden>
+  <form id="loginForm" class="card login">
+    <h1>بوابة المسوّقين</h1>
+    <p class="small">تابع زوار روابطك ومبيعاتك وعمولتك لحظة بلحظة.</p>
+    <div class="seg" role="tablist"><button type="button" class="on" data-mode="in">دخول</button><button type="button" data-mode="up">حساب جديد</button></div>
+    <label data-up hidden>اسمك أو اسم حسابك<input name="name" maxlength="80" autocomplete="name"></label>
+    <label data-up hidden>حسابك في إنستقرام أو تيك توك<input name="contact" maxlength="120" dir="ltr" placeholder="@username"></label>
+    <label>الإيميل<input name="email" type="email" autocomplete="username" dir="ltr" required></label>
+    <label>كلمة المرور<input name="password" type="password" autocomplete="current-password" dir="ltr" required minlength="10"></label>
+    <p class="small" data-up hidden>كلمة المرور هي مفتاح فك تشفير بيانات عملائك. لو نسيتها ما نقدر نسترجع البيانات القديمة.</p>
+    <button class="btn" type="submit" id="loginBtn">دخول</button>
+    <p class="err" id="loginMsg" role="alert"></p>
+  </form>
+</section>
+
+<section id="unlock" class="center" hidden>
+  <form id="unlockForm" class="card login">
+    <h1>افتح بيانات عملائك</h1>
+    <p class="small">بيانات العملاء مشفّرة. اكتب كلمة المرور عشان تنفتح في هذا المتصفح بس.</p>
+    <label>كلمة المرور<input name="password" type="password" autocomplete="current-password" dir="ltr" required></label>
+    <button class="btn" type="submit">افتح</button>
+    <p class="err" id="unlockMsg" role="alert"></p>
+  </form>
+</section>
+
+<section id="pending" class="center" hidden>
+  <div class="card login">
+    <h1>طلبك وصل ✅</h1>
+    <p id="pendingText">صاحب الأداة يراجع طلبك. أول ما يوافق ويربطك بروابطك، تطلع لك أرقامك هنا.</p>
+    <button class="btn ghost" type="button" data-logout>خروج</button>
+  </div>
+</section>
+
+<div id="app" hidden>
+  <header class="top">
+    <h1 id="hello">أهلاً</h1>
+    <div class="tools">
+      <span class="live" id="live">● مباشر</span>
+      <select id="range" aria-label="الفترة"><option value="1">آخر 24 ساعة</option><option value="7">آخر 7 أيام</option><option value="30" selected>آخر 30 يوم</option><option value="3650">الكل</option></select>
+      <button class="btn ghost" id="themeBtn" type="button">🎨 التصميم</button>
+      <button class="btn ghost" type="button" data-logout>خروج</button>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="card theme" id="themePanel" hidden>
+      <h2>صمّم لوحتك</h2>
+      <div class="opts">
+        <div><b>اللون</b><div class="swatches" id="swatches"></div></div>
+        <div><b>الوضع</b><div class="seg" data-key="mode"><button type="button" data-v="auto">تلقائي</button><button type="button" data-v="light">فاتح</button><button type="button" data-v="dark">داكن</button></div></div>
+        <div><b>حجم الخط</b><div class="seg" data-key="size"><button type="button" data-v="s">صغير</button><button type="button" data-v="m">وسط</button><button type="button" data-v="l">كبير</button></div></div>
+        <div><b>الزوايا</b><div class="seg" data-key="corners"><button type="button" data-v="round">دائرية</button><button type="button" data-v="sharp">حادة</button></div></div>
+        <div><b>الكثافة</b><div class="seg" data-key="density"><button type="button" data-v="cozy">مريحة</button><button type="button" data-v="compact">مضغوطة</button></div></div>
+        <div><b>الترتيب</b><div class="seg" data-key="first"><button type="button" data-v="money">الأرباح أول</button><button type="button" data-v="visits">الزوار أول</button><button type="button" data-v="customers">العملاء أول</button></div></div>
+      </div>
+      <p class="small" id="themeMsg">يتحفظ تلقائياً في حسابك.</p>
+    </section>
+
+    <div class="kpis" id="kpis"></div>
+
+    <div class="blocks" id="blocks">
+      <section class="card" data-block="money">
+        <h2>أرباحك</h2>
+        <div class="table-wrap"><table id="byCode"></table></div>
+        <h3>المبيعات</h3>
+        <div class="table-wrap"><table id="sales"></table></div>
+      </section>
+      <section class="card" data-block="visits">
+        <h2>الزوار</h2>
+        <div id="daily" class="days"></div>
+        <h3>وين وصلوا</h3>
+        <div id="funnel" class="funnel"></div>
+      </section>
+      <section class="card" data-block="customers">
+        <h2>عملاؤك</h2>
+        <p class="small">هذول الناس اللي جو من روابطك وكتبوا إيميلهم ورقمهم. البيانات مشفّرة، وما يشوفها إلا أنت وصاحب الأداة.</p>
+        <div class="table-wrap"><table id="leads"></table></div>
+      </section>
+    </div>
+  </main>
+</div>
+
+<section id="setup" class="center" hidden><div class="card login"><h1>الربط ناقص</h1></div></section>
+
+<script src="config.js?v=3"></script>
+<script src="types.js?v=2"></script>
+<script src="crypto.js?v=1"></script>
+<script src="partner.js?v=1"></script>
+</body>
+</html>

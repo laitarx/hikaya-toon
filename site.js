@@ -68,6 +68,41 @@
     a.textContent = S.email; a.href = 'mailto:' + S.email; row.hidden = false;
   }
 
+
+  // ------------------------------------------------------------ video types: one click switches the whole page
+  const TYPES = window.HK_TYPES || []; const CONNECT = window.HK_CONNECT || {};
+  const base = { title: document.title };
+  function applyType(key, why) {
+    const T = TYPES.find((x) => x.key === key) || TYPES[0]; if (!T) return;
+    const $ = (id) => document.getElementById(id);
+    document.documentElement.style.setProperty('--red', T.color);
+    $('hKicker').textContent = T.kicker; $('hTitle').innerHTML = T.h1; $('hLead').textContent = T.lead;
+    $('hChips').replaceChildren(...['ويندوز + أي وكيل ذكاء اصطناعي'].concat(T.chips).map((c) => Object.assign(document.createElement('li'), { textContent: c })));
+    const hv = $('heroVideo');
+    if (!hv.src.endsWith(T.full ? 'assets/hero.mp4' : T.video)) { hv.poster = T.full ? 'assets/poster.jpg' : T.poster; hv.src = T.full ? 'assets/hero.mp4' : T.video; hv.play().catch(() => {}); }
+    $('soundBtn').hidden = !T.full;
+    $('tName').textContent = T.icon + ' ' + T.name; $('tFits').textContent = T.fits; $('tEngine').textContent = T.engine;
+    $('tConnect').replaceChildren(...T.connect.map((k) => { const c = CONNECT[k]; const li = document.createElement('li');
+      const b = document.createElement('b'); b.textContent = c.name; const sp = document.createElement('span'); sp.textContent = c.how;
+      li.append(b, ' · ' + c.what, document.createElement('br'), sp); return li; }));
+    document.querySelectorAll('#steps li p').forEach((p, i) => { if (T.steps[i]) p.textContent = T.steps[i]; });
+    $('gallery').hidden = !['challenge', 'rise', 'city'].includes(T.key);
+    document.querySelectorAll('#typesBar a, .tthumbs a').forEach((a) => a.toggleAttribute('aria-current', a.dataset.type === T.key));
+    const cur = document.querySelector('#typesBar a[aria-current]'); if (cur && why === 'click') cur.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' });
+    document.title = T.key === 'challenge' ? base.title : T.name + ' | حكاية تون';
+    if (why) ev('type_view', { t: T.key, by: why });
+    window.HK_TYPE = T.key;
+  }
+  document.addEventListener('click', (e) => {
+    const a = e.target.closest('a[data-type]'); if (!a) return;
+    e.preventDefault(); applyType(a.dataset.type, 'click');
+    const u = new URL(location.href); u.searchParams.set('type', a.dataset.type); history.replaceState(null, '', u.pathname + u.search);
+    if (!a.closest('#typesBar')) document.getElementById('top').scrollIntoView({ behavior: 'smooth' });
+  });
+  const typeParam = (params.get('type') || '').toLowerCase();
+  if (TYPES.some((x) => x.key === typeParam)) applyType(typeParam, 'link');
+  else if (ref) rpc('ref_info', { p_code: ref }).then((r) => { const t = Array.isArray(r) ? r[0] && r[0].default_type : r && r.default_type; if (t && TYPES.some((x) => x.key === t)) applyType(t, 'ref'); }).catch(() => {});
+
   // ------------------------------------------------------------ buy -> lead form -> Gumroad
   const leadModal = document.getElementById('leadModal');
   const form = document.getElementById('leadForm');
@@ -98,7 +133,13 @@
     if (!/^\+[0-9]{8,15}$/.test(phone)) { msg.textContent = 'اكتب رقم جوال صحيح'; return; }
     if (!form.consent.checked) { msg.textContent = 'لازم توافق على حفظ البيانات عشان نكمل'; return; }
     const btn = form.querySelector('button[type=submit]'); btn.disabled = true; btn.textContent = 'لحظة...';
-    rpc('submit_lead', { p_session: sid, p_visitor: vid, p_email: email, p_phone: phone, p_consent: true })
+    // encrypted in this browser for the owner (and the affiliate who sent the visitor) only
+    rpc('lead_keys', { p_session: sid })
+      .then(async (keys) => {
+        if (!Array.isArray(keys) || !keys.length || !window.HKCrypto) return null;
+        const enc = await HKCrypto.seal({ email, phone }, keys);
+        return rpc('submit_lead_enc', { p_session: sid, p_visitor: vid, p_enc: enc, p_email_hash: await HKCrypto.emailHash(email), p_consent: true });
+      })
       .then((id) => { stage = Math.max(stage, 6); ping(true); ev('checkout_redirect'); location.href = checkoutUrl(typeof id === 'string' ? id : null); })
       .catch(() => { btn.disabled = false; btn.textContent = 'كمّل للدفع'; msg.textContent = 'صار خطأ، تأكد من البيانات وجرّب مرة ثانية'; });
   });

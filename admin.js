@@ -38,7 +38,7 @@
   $('loginForm').addEventListener('submit', async (e) => {
     e.preventDefault(); $('loginMsg').textContent = '';
     const f = e.target;
-    try { keep(await auth('token?grant_type=password', { email: f.email.value.trim(), password: f.password.value })); await enter(); }
+    try { keep(await auth('token?grant_type=password', { email: f.email.value.trim(), password: f.password.value })); await enter(f.password.value); }
     catch (err) { $('loginMsg').textContent = /Email not confirmed/i.test(err.message) ? 'أكّد إيميلك من الرسالة اللي وصلتك أول' : 'الإيميل أو كلمة المرور غلط'; }
   });
   $('firstTime').addEventListener('click', async () => {
@@ -46,16 +46,72 @@
     if (!f.email.value || f.password.value.length < 10) { $('loginMsg').textContent = 'اكتب إيميلك وكلمة مرور قوية (10 أحرف أو أكثر) وبعدين اضغط هنا'; return; }
     try {
       const j = await auth('signup', { email: f.email.value.trim(), password: f.password.value });
-      if (j.access_token) { keep(j); await enter(); }
+      if (j.access_token) { keep(j); await enter(f.password.value); }
       else $('loginMsg').textContent = 'وصلك إيميل تأكيد. أكّده وبعدين ارجع وسجّل دخول.';
     } catch (err) { $('loginMsg').textContent = err.message; }
   });
   $('logout').addEventListener('click', async () => { try { await fetch(API + '/auth/v1/logout', { method: 'POST', headers: { apikey: KEY, Authorization: 'Bearer ' + sess.at } }); } catch (_) {} save(null); location.reload(); });
 
-  async function enter() {
+  // ------------------------------------------------------------ encryption keys (private key never leaves this tab)
+  let PRIV = null; let UID = null;
+  const uidOf = (t) => { try { return JSON.parse(atob(t.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))).sub; } catch (_) { return null; } };
+  async function keys(pw) {
+    const rows = await api('keyring?select=user_id,pub,priv_enc,salt,iv&user_id=eq.' + UID);
+    if (rows.length) { if (pw) PRIV = await HKCrypto.unlock(rows[0], pw); return; }
+    if (!pw) return;
+    const k = await HKCrypto.newKeyring(pw);
+    await api('keyring', { method: 'POST', body: JSON.stringify({ user_id: UID, ...k.row }) });
+    PRIV = k.priv;
+  }
+  async function enter(pw) {
     const ok = await api('rpc/claim_admin', { method: 'POST', body: '{}' });
     if (ok !== true) { save(null); $('login').hidden = false; $('app').hidden = true; $('loginMsg').textContent = 'هذا الحساب ما عنده صلاحية.'; return; }
-    $('login').hidden = true; $('app').hidden = false; load();
+    UID = uidOf(await token());
+    if (pw) { try { await keys(pw); } catch (e) { console.error(e); } }
+    $('login').hidden = true;
+    if (!PRIV) { $('unlock').hidden = false; $('app').hidden = true; return; }
+    $('unlock').hidden = true; $('app').hidden = false; load();
+  }
+  $('unlockForm').addEventListener('submit', async (e) => {
+    e.preventDefault(); $('unlockMsg').textContent = '';
+    try { await keys(e.target.password.value); if (!PRIV) throw new Error(); e.target.reset(); $('unlock').hidden = true; $('app').hidden = false; load(); }
+    catch (_) { $('unlockMsg').textContent = 'كلمة المرور غلط'; }
+  });
+  $('skipUnlock').addEventListener('click', () => { $('unlock').hidden = true; $('app').hidden = false; load(); });
+
+  // readers of a record: every admin + the approved affiliate who owns the code
+  function readers(code) {
+    const out = DATA.keyring.filter((k) => DATA.adminIds.has(k.user_id)).map((k) => ({ kid: k.user_id, pub: k.pub }));
+    const r = DATA.refRows.find((x) => x.code === code); const a = r && r.affiliate_id && DATA.affs.find((x) => x.user_id === r.affiliate_id && x.status === 'approved');
+    const k = a && DATA.keyring.find((x) => x.user_id === a.user_id); if (k) out.push({ kid: k.user_id, pub: k.pub });
+    return out;
+  }
+  // old plaintext leads -> encrypted; and every record shared with whoever should read it now
+  async function secure() {
+    if (!PRIV) return 0; let n = 0;
+    const plain = await api('leads?select=id,email,phone,ref&email=not.is.null&limit=1000');
+    for (const l of plain) {
+      const enc = await HKCrypto.seal({ email: l.email, phone: l.phone }, readers(l.ref));
+      await api('leads?id=eq.' + l.id, { method: 'PATCH', body: JSON.stringify({ enc, email_hash: await HKCrypto.emailHash(l.email), email: null, phone: null }) }); n++;
+    }
+    for (const x of await api('sales?select=sale_id,email,ref&email=not.is.null&limit=1000')) {
+      const enc = await HKCrypto.seal({ email: x.email }, readers(x.ref));
+      await api('sales?sale_id=eq.' + encodeURIComponent(x.sale_id), { method: 'PATCH', body: JSON.stringify({ enc, email_hash: await HKCrypto.emailHash(x.email), email: null }) }); n++;
+    }
+    const lists = [['leads', 'id', await api('leads?select=id,ref,enc&enc=not.is.null&ref=not.is.null&limit=5000')],
+                   ['sales', 'sale_id', await api('sales?select=sale_id,ref,enc&enc=not.is.null&ref=not.is.null&limit=5000')]];
+    for (const [table, key, rows] of lists) {
+      for (const row of rows) {
+        let enc = row.enc; let changed = false;
+        for (const r of readers(row.ref)) if (!enc.k[r.kid]) { const e2 = await HKCrypto.share(enc, UID, PRIV, r.kid, r.pub); if (e2) { enc = e2; changed = true; } }
+        if (changed) { await api(table + '?' + key + '=eq.' + encodeURIComponent(row[key]), { method: 'PATCH', body: JSON.stringify({ enc }) }); n++; }
+      }
+    }
+    return n;
+  }
+  async function decryptAll() {
+    for (const l of DATA.leads) if (l.enc) { const d = PRIV && await HKCrypto.open(l.enc, UID, PRIV); l.email = d ? d.email : '🔒'; l.phone = d ? d.phone : ''; }
+    for (const x of DATA.sales) if (x.enc) { const d = PRIV && await HKCrypto.open(x.enc, UID, PRIV); x.email = d ? d.email : '🔒'; }
   }
 
   // ------------------------------------------------------------ data
@@ -63,15 +119,18 @@
   async function load() {
     const days = +$('range').value; const since = new Date(Date.now() - days * 864e5).toISOString();
     const q = encodeURIComponent(since);
-    const [sessions, visitors, leads, sales, refs, events] = await Promise.all([
+    const [sessions, visitors, leads, sales, refs, events, keyring, admins, affs, refRows] = await Promise.all([
       api(`sessions?select=id,visitor_id,ref,started_at,duration_sec,max_scroll,max_stage,video_sec&started_at=gte.${q}&limit=20000`),
       api(`visitors?select=id,referrer,utm,device,first_ref&last_seen=gte.${q}&limit=20000`),
       api(`v_lead_profiles?select=*&created_at=gte.${q}&order=created_at.desc&limit=5000`),
-      api(`sales?select=sale_id,email,price_cents,currency,ref,refunded,is_test,created_at&created_at=gte.${q}&order=created_at.desc&limit=5000`),
+      api(`sales?select=sale_id,email,enc,price_cents,currency,ref,refunded,is_test,created_at&created_at=gte.${q}&order=created_at.desc&limit=5000`),
       api('v_ref_stats?select=*&order=revenue_cents.desc'),
-      api(`events?select=type,data&at=gte.${q}&type=in.(section,faq_open)&limit=20000`),
+      api(`events?select=type,data&at=gte.${q}&type=in.(section,faq_open,type_view)&limit=20000`),
+      api('keyring?select=user_id,pub'), api('admins?select=user_id'), api('affiliates?select=*&order=created_at.desc'), api('ref_links?select=code,affiliate_id'),
     ]);
-    DATA = { sessions, visitors, leads, sales, refs, events };
+    DATA = { sessions, visitors, leads, sales, refs, events, keyring, adminIds: new Set(admins.map((a) => a.user_id)), affs, refRows };
+    if (PRIV && !load.secured) { load.secured = true; try { if (await secure()) return load(); } catch (e) { console.error(e); } }
+    await decryptAll();
     render();
   }
   $('range').addEventListener('change', load); $('reload').addEventListener('click', load);
@@ -114,7 +173,7 @@
     const sb = [['أقل من 25%', 0, 25], ['25-50%', 25, 50], ['50-75%', 50, 75], ['75-99%', 75, 99], ['آخر الصفحة', 99, 101]];
     bars($('scrollDist'), sb.map(([l, a, b]) => [l, sessions.filter((s) => s.max_scroll >= a && s.max_scroll < b).length]), sessions.length);
 
-    renderLeads(); renderRefs();
+    renderLeads(); renderRefs(); renderAffs();
 
     // sources
     const src = {};
@@ -131,7 +190,7 @@
 
     const count = (type, key) => { const m = {}; events.filter((e) => e.type === type).forEach((e) => { const k = e.data && e.data[key]; if (k) m[k] = (m[k] || 0) + 1; }); return Object.entries(m).sort((a, b) => b[1] - a[1]); };
     bars($('sections'), count('section', 't'), sessions.length);
-    bars($('faqs'), count('faq_open', 'q'));
+    bars($('faqs'), count('faq_open', 'q').concat(count('type_view', 't').map(([k, n]) => ['نوع: ' + ((TYPES.find((t) => t.key === k) || {}).name || k), n])));
     document.querySelectorAll('[data-w]').forEach((el) => { el.style.width = Math.max(0, Math.min(100, +el.dataset.w)) + '%'; });
   }
 
@@ -163,12 +222,16 @@
     const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['﻿' + csv], { type: 'text/csv' })); a.download = 'leads.csv'; a.click();
   });
 
+  const TYPES = window.HK_TYPES || [];
+  $('refType').innerHTML = TYPES.map((t) => `<option value="${t.key}">${esc(t.icon + ' ' + t.name)}</option>`).join('');
   const siteBase = (/^https:\/\//.test(S.siteUrl || '') ? S.siteUrl : 'https://laitarx.github.io/hikaya-toon/').replace(/\/?$/, '/');
   function renderRefs() {
-    $('refs').innerHTML = '<tr><th>المسوّق</th><th>الرابط</th><th>زوار</th><th>ضغطوا شراء</th><th>عملاء</th><th>مبيعات</th><th>الدخل</th><th>عمولته</th><th>تحويل</th><th></th></tr>' +
+    $('refs').innerHTML = '<tr><th>المسوّق</th><th>الرابط</th><th>النوع</th><th>حسابه</th><th>زوار</th><th>ضغطوا شراء</th><th>عملاء</th><th>مبيعات</th><th>الدخل</th><th>عمولته</th><th>تحويل</th><th></th></tr>' +
       DATA.refs.map((r) => {
         const rev = (r.revenue_cents || 0) / 100; const link = siteBase + '?ref=' + r.code;
         return `<tr class="${r.active ? '' : 'muted'}" data-code="${esc(r.code)}"><td>${esc(r.name)}</td><td dir="ltr"><button class="link copy" data-link="${esc(link)}">${esc(link.replace(/^https?:\/\//, ''))} 📋</button></td>
+        <td><select class="rtype"><option value="">تحدي (افتراضي)</option>${TYPES.map((t) => `<option value="${t.key}" ${t.key === r.default_type ? 'selected' : ''}>${esc(t.name)}</option>`).join('')}</select></td>
+        <td><select class="raff"><option value="">—</option>${DATA.affs.filter((a) => a.status === 'approved').map((a) => `<option value="${esc(a.user_id)}" ${a.user_id === r.affiliate_id ? 'selected' : ''}>${esc(a.name)}</option>`).join('')}</select></td>
         <td>${fmt(r.visitors)}</td><td>${fmt(r.buy_clicks)}</td><td>${fmt(r.leads)}</td><td>${fmt(r.sales)}</td><td>$${rev.toFixed(0)}</td><td>$${((rev * r.commission_pct) / 100).toFixed(0)} (${esc(+r.commission_pct)}%) <button class="link pct" title="تعديل النسبة">✏️</button></td>
         <td>${r.visitors ? ((r.sales / r.visitors) * 100).toFixed(1) + '%' : '—'}</td><td><button class="link toggle">${r.active ? 'إيقاف' : 'تفعيل'}</button> · <button class="link del">حذف</button></td></tr>`;
       }).join('');
@@ -194,12 +257,41 @@
       }
     } catch (err) { alert(err.message); }
   });
+  $('refs').addEventListener('change', async (e) => {
+    const sel = e.target; const code = sel.closest('tr') && sel.closest('tr').dataset.code; if (!code) return;
+    const where = 'ref_links?code=eq.' + encodeURIComponent(code);
+    try {
+      if (sel.classList.contains('rtype')) await api(where, { method: 'PATCH', body: JSON.stringify({ default_type: sel.value || null }) });
+      if (sel.classList.contains('raff')) { await api(where, { method: 'PATCH', body: JSON.stringify({ affiliate_id: sel.value || null }) }); load.secured = false; load(); }
+    } catch (err) { alert(err.message); }
+  });
+  function renderAffs() {
+    const st = { pending: 'ينتظر موافقتك', approved: 'مقبول', rejected: 'مرفوض' };
+    $('affs').innerHTML = '<tr><th>الاسم</th><th>الإيميل</th><th>التواصل</th><th>الحالة</th><th>روابطه</th><th>تشفير</th><th></th></tr>' + (DATA.affs.map((a) => {
+      const codes = DATA.refRows.filter((r) => r.affiliate_id === a.user_id).map((r) => r.code).join('، ') || '—';
+      const hasKey = DATA.keyring.some((k) => k.user_id === a.user_id);
+      return `<tr data-uid="${esc(a.user_id)}" class="${a.status === 'rejected' ? 'muted' : ''}"><td>${esc(a.name)}</td><td dir="ltr">${esc(a.email)}</td><td>${esc(a.contact || '')}</td><td><span class="tag ${a.status === 'approved' ? 'bought' : a.status === 'pending' ? 'warm' : 'hot'}">${esc(st[a.status])}</span></td>
+        <td dir="ltr">${esc(codes)}</td><td>${hasKey ? '✅' : 'ما دخل للحين'}</td><td>${a.status !== 'approved' ? '<button class="link aok">موافقة</button>' : ''}${a.status !== 'rejected' ? ' · <button class="link ano">رفض</button>' : ''}</td></tr>`;
+    }).join('') || '<tr><td colspan="7" class="small">ما فيه طلبات للحين</td></tr>');
+  }
+  $('affs').addEventListener('click', async (e) => {
+    const b = e.target.closest('button'); if (!b) return; const uid = b.closest('tr').dataset.uid;
+    const status = b.classList.contains('aok') ? 'approved' : 'rejected';
+    if (status === 'rejected' && !confirm('ترفض هذا المسوّق؟ يوقف وصوله لكل البيانات.')) return;
+    try {
+      await api('affiliates?user_id=eq.' + uid, { method: 'PATCH', body: JSON.stringify({ status, approved_at: status === 'approved' ? new Date().toISOString() : null }) });
+      if (status === 'rejected') await api('ref_links?affiliate_id=eq.' + uid, { method: 'PATCH', body: JSON.stringify({ affiliate_id: null }) });
+      load.secured = false; load();
+    } catch (err) { alert(err.message); }
+  });
+  $('partnerLink').href = (/^https:\/\//.test(S.siteUrl || '') ? S.siteUrl : 'https://laitarx.github.io/hikaya-toon/').replace(/\/?$/, '/') + 'partner.html';
+
   $('refForm').addEventListener('submit', async (e) => {
     e.preventDefault(); const f = e.target; $('refMsg').textContent = '';
     const code = f.code.value.trim().toLowerCase();
     if (!/^[a-z0-9_-]{2,32}$/.test(code)) { $('refMsg').textContent = 'الكود حروف إنجليزية صغيرة وأرقام فقط'; return; }
     try {
-      await api('ref_links', { method: 'POST', body: JSON.stringify({ code, name: f.name.value.trim(), contact: f.contact.value.trim() || null, commission_pct: +f.pct.value || 0 }) });
+      await api('ref_links', { method: 'POST', body: JSON.stringify({ code, name: f.name.value.trim(), contact: f.contact.value.trim() || null, commission_pct: +f.pct.value || 0, default_type: f.type.value || null }) });
       f.reset(); f.pct.value = 20; load();
     } catch (err) { $('refMsg').textContent = /duplicate/i.test(err.message) ? 'الكود مستخدم' : err.message; }
   });

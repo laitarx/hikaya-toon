@@ -23,6 +23,17 @@
   </form>
 </section>
 
+<section id="unlock" class="center" hidden>
+  <form id="unlockForm" class="card login">
+    <h1>فك تشفير بيانات العملاء</h1>
+    <p class="small">بيانات العملاء مشفّرة. اكتب كلمة مرور حسابك عشان تنفتح في هذا المتصفح بس.</p>
+    <label>كلمة المرور<input name="password" type="password" autocomplete="current-password" dir="ltr" required></label>
+    <button class="btn" type="submit">افتح</button>
+    <button class="link" type="button" id="skipUnlock">كمّل بدون فك التشفير</button>
+    <p class="err" id="unlockMsg" role="alert"></p>
+  </form>
+</section>
+
 <section id="setup" class="center" hidden>
   <div class="card login"><h1>الربط ناقص</h1><p>اكتب رابط Supabase والمفتاح في <code>config.js</code> عشان تشتغل اللوحة.</p></div>
 </section>
@@ -77,10 +88,17 @@
         <input name="code" placeholder="الكود (حروف إنجليزية)" dir="ltr" required pattern="[a-z0-9_-]{2,32}">
         <input name="contact" placeholder="التواصل (اختياري)">
         <input name="pct" type="number" min="0" max="100" step="1" value="20" title="العمولة %">
+        <select name="type" title="النوع اللي يظهر لزوار هذا الرابط" id="refType"></select>
         <button class="btn" type="submit">إنشاء رابط</button>
       </form>
       <p class="err" id="refMsg"></p>
       <div class="table-wrap"><table id="refs"></table></div>
+    </section>
+
+    <section class="card">
+      <h2>حسابات المسوّقين</h2>
+      <p class="small">المسوّق يسجّل من صفحة <a id="partnerLink" href="partner.html" target="_blank" rel="noopener">partner.html</a>، وأنت توافق عليه وتربطه بروابطه. كل مسوّق يشوف زواره ومبيعاته وعملاءه هو بس، وبيانات العملاء مشفّرة لك وله.</p>
+      <div class="table-wrap"><table id="affs"></table></div>
     </section>
 
     <div class="grid2">
@@ -96,6 +114,8 @@
 </div>
 
 <script src="config.js?v=3"></script>
-<script src="admin.js?v=4"></script>
+<script src="types.js?v=2"></script>
+<script src="crypto.js?v=1"></script>
+<script src="admin.js?v=5"></script>
 </body>
 </html>
