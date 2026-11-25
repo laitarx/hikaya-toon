@@ -1,0 +1,29 @@
+# حكاية تون (Hikaya Toon)
+
+> حكاية تون أداة (مهارة) لوكلاء الذكاء الاصطناعي تصنع مسلسلات كرتون عربية قصيرة لإنستقرام وتيك توك ويوتيوب شورتس. Hikaya Toon is a skill for AI coding agents that produces complete Arabic cartoon series episodes for Instagram Reels, TikTok and YouTube Shorts.
+
+- الموقع: https://laitarx.github.io/hikaya-toon/
+- الشراء: https://374397930834.gumroad.com/l/hikaya-toon (49 دولار، دفعة وحدة)
+- المطوّر: يوسف — yusefai855@gmail.com
+- مثال حي: حساب إنستقرام @ghanim.1riyal (مسلسل "مليونير بـ30 يوم")
+
+## وش تسوي
+- تكتب فكرة المسلسل وقصة 30 حلقة واسم الحساب والبايو.
+- تكتب السكربت باللهجة الخليجية أو أي لهجة، وتطلّع الصوت من ElevenLabs مع توقيت كل كلمة.
+- ترسم الحلقة كاملة بالكود: شخصيات خليجية (ثوب، شماغ، عباية) ثابتة الشكل بين الحلقات، قرية وسوق وبيوت، عدّادات حيّة (اليوم 1/30، الرصيد)، كروت تعليقات، كابشن عربي كلمة كلمة من اليمين لليسار، ومؤثرات صوتية.
+- ترندر فيديو MP4 بدقة 1080x1920 (9:16). حلقة 70 ثانية تترندر في حوالي 25 ثانية.
+- تقرأ تعليقات الجمهور كل يوم وتختار التعليق المنطقي اللي عليه قبول وتبني عليه الحلقة الجاية.
+- فيها 6 محركات رسم، خطة نمو وربح، و13 مهارة إنستقرام.
+
+## المتطلبات
+- ويندوز + وكيل ذكاء اصطناعي: Claude Code أو Codex أو Cursor أو Antigravity.
+- Node.js و Python و FFmpeg (مجانية، وسكربت التثبيت يركّبها).
+- حساب ElevenLabs للصوت. تكلفة الحلقة تقريباً 900 حرف من رصيد الصوت لحلقة دقيقة.
+
+## مع الشراء
+- تحديثات مجانية مستمرة، ومكالمتين استشارة مجاناً، ودورات للمشترين مستقبلاً.
+- الفيديوهات ملك المشتري ويقدر يربح منها. الأداة نفسها للاستخدام الشخصي وممنوع إعادة بيعها.
+- ما في ضمان لمشاهدات أو متابعين أو دخل.
+
+## English summary
+Hikaya Toon writes the script, generates the voice with ElevenLabs, draws every frame in code (consistent characters, sets, live counters, right-to-left Arabic captions, sound effects) and renders a 1080x1920 MP4. Windows + any AI coding agent. One-time $49 with free updates and two free consulting calls. Not affiliated with Anthropic, OpenAI, ElevenLabs or Meta.
