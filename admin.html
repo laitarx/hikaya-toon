@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; font-src 'self'; style-src 'self'; script-src 'self'; connect-src https://*.supabase.co; object-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
+<meta name="referrer" content="no-referrer">
+<title>لوحة التحكم</title>
+<link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="admin.css?v=2">
+</head>
+<body>
+
+<section id="login" class="center" hidden>
+  <form id="loginForm" class="card login">
+    <h1>لوحة التحكم</h1>
+    <label>الإيميل<input name="email" type="email" autocomplete="username" dir="ltr" required></label>
+    <label>كلمة المرور<input name="password" type="password" autocomplete="current-password" dir="ltr" required minlength="10"></label>
+    <button class="btn" type="submit">دخول</button>
+    <button class="link" type="button" id="firstTime">أول مرة؟ أنشئ حساب المدير</button>
+    <p class="err" id="loginMsg" role="alert"></p>
+  </form>
+</section>
+
+<section id="setup" class="center" hidden>
+  <div class="card login"><h1>الربط ناقص</h1><p>اكتب رابط Supabase والمفتاح في <code>config.js</code> عشان تشتغل اللوحة.</p></div>
+</section>
+
+<div id="app" hidden>
+  <header class="top">
+    <h1>حكاية تون · لوحة التحكم</h1>
+    <div class="tools">
+      <select id="range" aria-label="الفترة">
+        <option value="1">آخر 24 ساعة</option><option value="7" selected>آخر 7 أيام</option>
+        <option value="30">آخر 30 يوم</option><option value="3650">الكل</option>
+      </select>
+      <button class="btn ghost" id="reload" type="button">تحديث</button>
+      <button class="btn ghost" id="logout" type="button">خروج</button>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <div class="kpis" id="kpis"></div>
+
+    <section class="card">
+      <h2>القمع: كم واحد وصل لكل خطوة</h2>
+      <div id="funnel" class="funnel"></div>
+    </section>
+
+    <div class="grid2">
+      <section class="card">
+        <h2>كم وقت يقضون بالصفحة</h2>
+        <div id="timeDist" class="bars"></div>
+        <p class="small" id="timeNote"></p>
+      </section>
+      <section class="card">
+        <h2>وين يوقفون (أعمق نزول بالصفحة)</h2>
+        <div id="scrollDist" class="bars"></div>
+      </section>
+    </div>
+
+    <section class="card">
+      <h2>العملاء المحتملين: مين تتواصل معه</h2>
+      <p class="small">"اتصل الحين" = وصل للدفع وما اشترى وقضى وقت. "تابع" = مهتم بس أقل. رتّبهم واضغط واتساب.</p>
+      <div class="row">
+        <select id="leadFilter"><option value="all">الكل</option><option value="hot">اتصل الحين</option><option value="warm">تابع</option><option value="bought">اشتروا</option></select>
+        <button class="btn ghost" id="exportLeads" type="button">تصدير CSV</button>
+      </div>
+      <div class="table-wrap"><table id="leads"></table></div>
+    </section>
+
+    <section class="card">
+      <h2>روابط الدعوة (المشاهير والمسوقين)</h2>
+      <form id="refForm" class="row wrap-row">
+        <input name="name" placeholder="اسم المسوّق" required>
+        <input name="code" placeholder="الكود (حروف إنجليزية)" dir="ltr" required pattern="[a-z0-9_-]{2,32}">
+        <input name="contact" placeholder="التواصل (اختياري)">
+        <input name="pct" type="number" min="0" max="100" step="1" value="20" title="العمولة %">
+        <button class="btn" type="submit">إنشاء رابط</button>
+      </form>
+      <p class="err" id="refMsg"></p>
+      <div class="table-wrap"><table id="refs"></table></div>
+    </section>
+
+    <div class="grid2">
+      <section class="card"><h2>من وين جوا</h2><div class="table-wrap"><table id="sources"></table></div></section>
+      <section class="card"><h2>آخر المبيعات</h2><div class="table-wrap"><table id="sales"></table></div></section>
+    </div>
+
+    <section class="card">
+      <h2>الأقسام اللي شافوها وأسئلة FAQ</h2>
+      <div class="grid2"><div id="sections" class="bars"></div><div id="faqs" class="bars"></div></div>
+    </section>
+  </main>
+</div>
+
+<script src="config.js?v=2"></script>
+<script src="admin.js?v=2"></script>
+</body>
+</html>
