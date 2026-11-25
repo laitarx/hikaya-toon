@@ -163,7 +163,7 @@
     const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['﻿' + csv], { type: 'text/csv' })); a.download = 'leads.csv'; a.click();
   });
 
-  const siteBase = location.origin + location.pathname.replace(/admin\.html$/, '');
+  const siteBase = (/^https:\/\//.test(S.siteUrl || '') ? S.siteUrl : 'https://laitarx.github.io/hikaya-toon/').replace(/\/?$/, '/');
   function renderRefs() {
     $('refs').innerHTML = '<tr><th>المسوّق</th><th>الرابط</th><th>زوار</th><th>ضغطوا شراء</th><th>عملاء</th><th>مبيعات</th><th>الدخل</th><th>عمولته</th><th>تحويل</th><th></th></tr>' +
       DATA.refs.map((r) => {
