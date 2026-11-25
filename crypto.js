@@ -20,7 +20,7 @@
     const pk = await C.exportKey('pkcs8', kp.privateKey);
     const salt = crypto.getRandomValues(new Uint8Array(16)); const iv = crypto.getRandomValues(new Uint8Array(12));
     const ct = await C.encrypt({ name: 'AES-GCM', iv }, await pwKey(password, salt), pk);
-    return { row: { pub: { kty: pub.kty, n: pub.n, e: pub.e, alg: pub.alg }, priv_enc: b64(ct), salt: b64(salt), iv: b64(iv) }, priv: kp.privateKey };
+    return { row: { pub: { kty: pub.kty, n: pub.n, e: pub.e, alg: pub.alg }, priv_enc: b64(ct), salt: b64(salt), iv: b64(iv) }, priv: await C.importKey('pkcs8', pk, RSA, false, ['decrypt']) };
   }
   async function unlock(row, password) {
     const pk = await C.decrypt({ name: 'AES-GCM', iv: unb64(row.iv) }, await pwKey(password, unb64(row.salt)), unb64(row.priv_enc));

@@ -19,6 +19,7 @@
     <label>كلمة المرور<input name="password" type="password" autocomplete="current-password" dir="ltr" required minlength="10"></label>
     <button class="btn" type="submit">دخول</button>
     <button class="link" type="button" id="firstTime">أول مرة؟ أنشئ حساب المدير</button>
+    <label class="chk"><input name="remember" type="checkbox"> تذكّر هذا الجهاز 30 يوم (لين ما تسجّل خروج)</label>
     <button class="link" type="button" id="forgot">نسيت كلمة المرور؟</button>
     <p class="err" id="loginMsg" role="alert"></p>
   </form>
@@ -31,8 +32,8 @@
     <h1>فك تشفير بيانات العملاء</h1>
     <p class="small">بيانات العملاء مشفّرة. اكتب كلمة مرور حسابك عشان تنفتح في هذا المتصفح بس.</p>
     <label>كلمة المرور<input name="password" type="password" autocomplete="current-password" dir="ltr" required></label>
+    <label class="chk"><input name="remember" type="checkbox"> تذكّر هذا الجهاز 30 يوم (لين ما تسجّل خروج)</label>
     <button class="btn" type="submit">افتح</button>
-    <button class="link" type="button" id="skipUnlock">كمّل بدون فك التشفير</button>
     <button class="link" type="button" id="newKey">نسيت كلمة المرور القديمة؟ أنشئ مفتاح جديد</button>
     <p class="err" id="unlockMsg" role="alert"></p>
   </form>
@@ -121,9 +122,10 @@
 
 <script src="config.js?v=3"></script>
 <script src="types.js?v=2"></script>
-<script src="crypto.js?v=2"></script>
+<script src="crypto.js?v=3"></script>
 <script src="account.js?v=1"></script>
 <script src="recover.js?v=1"></script>
-<script src="admin.js?v=7"></script>
+<script src="remember.js?v=1"></script>
+<script src="admin.js?v=8"></script>
 </body>
 </html>

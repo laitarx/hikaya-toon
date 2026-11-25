@@ -16,7 +16,8 @@
   // ------------------------------------------------------------ auth (session lives in this tab only)
   let sess = null;
   try { sess = JSON.parse(sessionStorage.getItem('hk_partner') || 'null'); } catch (_) {}
-  const save = (s) => { sess = s; try { s ? sessionStorage.setItem('hk_partner', JSON.stringify(s)) : sessionStorage.removeItem('hk_partner'); } catch (_) {} };
+  const DEV = HKRemember('partner');
+  const save = (s) => { sess = s; try { s ? sessionStorage.setItem('hk_partner', JSON.stringify(s)) : sessionStorage.removeItem('hk_partner'); } catch (_) {} if (s) DEV.touch(s); };
   async function auth(path, body) {
     const r = await fetch(API + '/auth/v1/' + path, { method: 'POST', headers: { apikey: KEY, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     const j = await r.json().catch(() => ({}));
@@ -27,7 +28,7 @@
   async function token() { if (!sess) throw new Error('auth'); if (Date.now() > sess.exp) keep(await auth('token?grant_type=refresh_token', { refresh_token: sess.rt })); return sess.at; }
   async function api(path, opt = {}) {
     const r = await fetch(API + '/rest/v1/' + path, { ...opt, headers: { apikey: KEY, Authorization: 'Bearer ' + await token(), 'Content-Type': 'application/json', Prefer: 'return=representation', ...(opt.headers || {}) } });
-    if (r.status === 401) { save(null); location.reload(); }
+    if (r.status === 401) { save(null); DEV.clear(); location.reload(); }
     const j = await r.json().catch(() => null);
     if (!r.ok) throw new Error((j && (j.message || j.hint)) || 'خطأ ' + r.status);
     return j;
@@ -57,7 +58,7 @@
   });
   document.querySelectorAll('[data-logout]').forEach((b) => b.addEventListener('click', async () => {
     try { await fetch(API + '/auth/v1/logout', { method: 'POST', headers: { apikey: KEY, Authorization: 'Bearer ' + sess.at } }); } catch (_) {}
-    save(null); location.reload();
+    save(null); DEV.clear(); location.reload();
   }));
 
   // ------------------------------------------------------------ keys
@@ -131,6 +132,7 @@
 
   // ------------------------------------------------------------ data (refreshes every 30 s)
   async function load() {
+    if (!load.rem) { load.rem = true; if (PRIV && ($('loginForm').remember.checked || $('unlockForm').remember.checked)) DEV.store(sess, UID, PRIV).catch(() => {}); }
     const days = +$('range').value;
     try {
       const [st, leads, sales] = await Promise.all([rpc('aff_stats', { p_days: days }), rpc('aff_leads', { p_days: days }), rpc('aff_sales', { p_days: days })]);
@@ -179,5 +181,6 @@
   const recovering = HKRecover({ API, KEY, redirect: location.origin + location.pathname, forgotBtn: $('forgot'), emailField: $('loginForm').email, msg: $('loginMsg'), resetSection: $('reset'),
     onDone: async (tok, pw) => { keep(tok); await enter(pw); } });
   if (recovering) show('reset');
+  else if (!sess && DEV.get()) (async () => { const d = DEV.get(); save(d.sess); PRIV = await DEV.key(d.uid); if (!PRIV) DEV.clear(); await enter(); })().catch(() => { DEV.clear(); save(null); show('login'); });
   else if (sess) enter().catch(() => { save(null); show('login'); }); else show('login');
 })();

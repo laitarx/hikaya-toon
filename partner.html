@@ -25,6 +25,7 @@
     <label>كلمة المرور<input name="password" type="password" autocomplete="current-password" dir="ltr" required minlength="10"></label>
     <p class="small" data-up hidden>كلمة المرور هي مفتاح فك تشفير بيانات عملائك. لو نسيتها ما نقدر نسترجع البيانات القديمة.</p>
     <button class="btn" type="submit" id="loginBtn">دخول</button>
+    <label class="chk"><input name="remember" type="checkbox"> تذكّر هذا الجهاز 30 يوم (لين ما تسجّل خروج)</label>
     <button class="link" type="button" id="forgot">نسيت كلمة المرور؟</button>
     <p class="err" id="loginMsg" role="alert"></p>
   </form>
@@ -37,6 +38,7 @@
     <h1>افتح بيانات عملائك</h1>
     <p class="small">بيانات العملاء مشفّرة. اكتب كلمة المرور عشان تنفتح في هذا المتصفح بس.</p>
     <label>كلمة المرور<input name="password" type="password" autocomplete="current-password" dir="ltr" required></label>
+    <label class="chk"><input name="remember" type="checkbox"> تذكّر هذا الجهاز 30 يوم (لين ما تسجّل خروج)</label>
     <button class="btn" type="submit">افتح</button>
     <button class="link" type="button" id="newKey">نسيت كلمة المرور القديمة؟ أنشئ مفتاح جديد</button>
     <p class="err" id="unlockMsg" role="alert"></p>
@@ -111,9 +113,10 @@
 
 <script src="config.js?v=3"></script>
 <script src="types.js?v=2"></script>
-<script src="crypto.js?v=2"></script>
+<script src="crypto.js?v=3"></script>
 <script src="account.js?v=1"></script>
 <script src="recover.js?v=1"></script>
-<script src="partner.js?v=3"></script>
+<script src="remember.js?v=1"></script>
+<script src="partner.js?v=4"></script>
 </body>
 </html>

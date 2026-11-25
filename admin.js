@@ -13,7 +13,8 @@
   // ------------------------------------------------------------ auth
   let sess = null;
   try { sess = JSON.parse(sessionStorage.getItem('hk_admin') || 'null'); } catch (_) {}
-  const save = (s) => { sess = s; try { s ? sessionStorage.setItem('hk_admin', JSON.stringify(s)) : sessionStorage.removeItem('hk_admin'); } catch (_) {} };
+  const DEV = HKRemember('admin');
+  const save = (s) => { sess = s; try { s ? sessionStorage.setItem('hk_admin', JSON.stringify(s)) : sessionStorage.removeItem('hk_admin'); } catch (_) {} if (s) DEV.touch(s); };
   async function auth(path, body) {
     const r = await fetch(API + '/auth/v1/' + path, { method: 'POST', headers: { apikey: KEY, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     const j = await r.json().catch(() => ({}));
@@ -29,7 +30,7 @@
   async function api(path, opt = {}) {
     const t = await token();
     const r = await fetch(API + '/rest/v1/' + path, { ...opt, headers: { apikey: KEY, Authorization: 'Bearer ' + t, 'Content-Type': 'application/json', Prefer: 'return=representation', ...(opt.headers || {}) } });
-    if (r.status === 401) { save(null); location.reload(); }
+    if (r.status === 401) { save(null); DEV.clear(); location.reload(); }
     const j = await r.json().catch(() => null);
     if (!r.ok) throw new Error((j && (j.message || j.hint)) || 'خطأ ' + r.status);
     return j;
@@ -50,7 +51,7 @@
       else $('loginMsg').textContent = 'وصلك إيميل تأكيد. أكّده وبعدين ارجع وسجّل دخول.';
     } catch (err) { $('loginMsg').textContent = err.message; }
   });
-  $('logout').addEventListener('click', async () => { try { await fetch(API + '/auth/v1/logout', { method: 'POST', headers: { apikey: KEY, Authorization: 'Bearer ' + sess.at } }); } catch (_) {} save(null); location.reload(); });
+  $('logout').addEventListener('click', async () => { try { await fetch(API + '/auth/v1/logout', { method: 'POST', headers: { apikey: KEY, Authorization: 'Bearer ' + sess.at } }); } catch (_) {} save(null); DEV.clear(); location.reload(); });
 
   // ------------------------------------------------------------ encryption keys (private key never leaves this tab)
   let PRIV = null; let UID = null;
@@ -86,7 +87,6 @@
     try { const k = await HKCrypto.newKeyring(pw); await api('keyring?user_id=eq.' + UID, { method: 'PATCH', body: JSON.stringify({ ...k.row, updated_at: new Date().toISOString() }) }); PRIV = k.priv; $('unlockForm').reset(); $('unlock').hidden = true; $('app').hidden = false; load(); }
     catch (err) { $('unlockMsg').textContent = err.message; }
   });
-  $('skipUnlock').addEventListener('click', () => { $('unlock').hidden = true; $('app').hidden = false; load(); });
 
   // readers of a record: every admin + the approved affiliate who owns the code
   function readers(code) {
@@ -126,6 +126,7 @@
   // ------------------------------------------------------------ data
   let DATA = {};
   async function load() {
+    if (!load.rem) { load.rem = true; if (PRIV && ($('loginForm').remember.checked || $('unlockForm').remember.checked)) DEV.store(sess, UID, PRIV).catch(() => {}); }
     const days = +$('range').value; const since = new Date(Date.now() - days * 864e5).toISOString();
     const q = encodeURIComponent(since);
     const [sessions, visitors, leads, sales, refs, events, keyring, admins, affs, refRows] = await Promise.all([
@@ -316,5 +317,6 @@
   const recovering = HKRecover({ API, KEY, redirect: location.origin + location.pathname, forgotBtn: $('forgot'), emailField: $('loginForm').email, msg: $('loginMsg'), resetSection: $('reset'),
     onDone: async (tok, pw) => { keep(tok); await enter(pw); } });
   if (recovering) $('login').hidden = true;
+  else if (!sess && DEV.get()) (async () => { const d = DEV.get(); save(d.sess); PRIV = await DEV.key(d.uid); if (!PRIV) DEV.clear(); await enter(); })().catch(() => { DEV.clear(); save(null); $('login').hidden = false; $('app').hidden = true; });
   else if (sess) enter().catch((e) => { console.error(e); save(null); $('login').hidden = false; $('app').hidden = true; }); else $('login').hidden = false;
 })();
