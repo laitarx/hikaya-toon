@@ -8,7 +8,7 @@
 <meta name="referrer" content="no-referrer">
 <title>بوابة المسوّقين | حكاية تون</title>
 <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="admin.css?v=3">
+<link rel="stylesheet" href="admin.css?v=4">
 <link rel="stylesheet" href="partner.css?v=1">
 </head>
 <body>
@@ -19,6 +19,7 @@
     <p class="small">تابع زوار روابطك ومبيعاتك وعمولتك لحظة بلحظة.</p>
     <div class="seg" role="tablist"><button type="button" class="on" data-mode="in">دخول</button><button type="button" data-mode="up">حساب جديد</button></div>
     <label data-up hidden>اسمك أو اسم حسابك<input name="name" maxlength="80" autocomplete="name"></label>
+    <label data-up hidden>كود رابطك (اللي أعطاك إياه صاحب الأداة)<input name="code" maxlength="32" dir="ltr" placeholder="مثال: safwan25" autocapitalize="off"></label>
     <label data-up hidden>حسابك في إنستقرام أو تيك توك<input name="contact" maxlength="120" dir="ltr" placeholder="@username"></label>
     <label>الإيميل<input name="email" type="email" autocomplete="username" dir="ltr" required></label>
     <label>كلمة المرور<input name="password" type="password" autocomplete="current-password" dir="ltr" required minlength="10"></label>
@@ -42,6 +43,11 @@
   <div class="card login">
     <h1>طلبك وصل ✅</h1>
     <p id="pendingText">صاحب الأداة يراجع طلبك. أول ما يوافق ويربطك بروابطك، تطلع لك أرقامك هنا.</p>
+    <form id="codeForm" class="pw-form">
+      <label>كود رابطك<input name="code" maxlength="32" dir="ltr" required autocapitalize="off"></label>
+      <button class="btn ghost" type="submit">حفظ الكود</button>
+      <p class="err" id="codeMsg" role="alert"></p>
+    </form>
     <button class="btn ghost" type="button" data-logout>خروج</button>
   </div>
 </section>
@@ -53,11 +59,13 @@
       <span class="live" id="live">● مباشر</span>
       <select id="range" aria-label="الفترة"><option value="1">آخر 24 ساعة</option><option value="7">آخر 7 أيام</option><option value="30" selected>آخر 30 يوم</option><option value="3650">الكل</option></select>
       <button class="btn ghost" id="themeBtn" type="button">🎨 التصميم</button>
+      <button class="btn ghost" id="pwBtn" type="button">🔑 كلمة المرور</button>
       <button class="btn ghost" type="button" data-logout>خروج</button>
     </div>
   </header>
 
   <main class="wrap">
+    <section class="card" id="pwPanel" hidden></section>
     <section class="card theme" id="themePanel" hidden>
       <h2>صمّم لوحتك</h2>
       <div class="opts">
@@ -100,6 +108,7 @@
 <script src="config.js?v=3"></script>
 <script src="types.js?v=2"></script>
 <script src="crypto.js?v=1"></script>
-<script src="partner.js?v=1"></script>
+<script src="account.js?v=1"></script>
+<script src="partner.js?v=2"></script>
 </body>
 </html>

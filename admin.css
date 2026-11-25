@@ -43,3 +43,8 @@ td a { color: var(--b); }
 .tag.hot { background: #ffc9c9; color: #1f1a17; } .tag.warm { background: #fff3bf; color: #1f1a17; } .tag.bought { background: #b2f2bb; color: #1f1a17; }
 .wrap-row input { flex: 1 1 140px; }
 @media (max-width: 800px) { .grid2 { grid-template-columns: 1fr; } .step, .bar { grid-template-columns: 1fr; gap: 2px; } }
+
+.pw-form { display: grid; gap: 10px; max-width: 420px; }
+.chk { display: flex; gap: 8px; align-items: flex-start; font-weight: 500; }
+.chk input { width: 18px; height: 18px; margin-top: 4px; }
+.btn.danger { background: #e03131; color: #fff; }

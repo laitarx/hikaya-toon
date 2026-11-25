@@ -72,6 +72,8 @@
     if (!PRIV) { $('unlock').hidden = false; $('app').hidden = true; return; }
     $('unlock').hidden = true; $('app').hidden = false; load();
   }
+  HKPassword({ panel: $('pwPanel'), API, KEY, token, api, uid: () => UID });
+  $('pwBtn').addEventListener('click', () => { $('pwPanel').hidden = !$('pwPanel').hidden; });
   $('unlockForm').addEventListener('submit', async (e) => {
     e.preventDefault(); $('unlockMsg').textContent = '';
     try { await keys(e.target.password.value); if (!PRIV) throw new Error(); e.target.reset(); $('unlock').hidden = true; $('app').hidden = false; load(); }
@@ -267,12 +269,12 @@
   });
   function renderAffs() {
     const st = { pending: 'ينتظر موافقتك', approved: 'مقبول', rejected: 'مرفوض' };
-    $('affs').innerHTML = '<tr><th>الاسم</th><th>الإيميل</th><th>التواصل</th><th>الحالة</th><th>روابطه</th><th>تشفير</th><th></th></tr>' + (DATA.affs.map((a) => {
+    $('affs').innerHTML = '<tr><th>الاسم</th><th>الإيميل</th><th>التواصل</th><th>الكود اللي طلبه</th><th>الحالة</th><th>روابطه</th><th>تشفير</th><th></th></tr>' + (DATA.affs.map((a) => {
       const codes = DATA.refRows.filter((r) => r.affiliate_id === a.user_id).map((r) => r.code).join('، ') || '—';
       const hasKey = DATA.keyring.some((k) => k.user_id === a.user_id);
-      return `<tr data-uid="${esc(a.user_id)}" class="${a.status === 'rejected' ? 'muted' : ''}"><td>${esc(a.name)}</td><td dir="ltr">${esc(a.email)}</td><td>${esc(a.contact || '')}</td><td><span class="tag ${a.status === 'approved' ? 'bought' : a.status === 'pending' ? 'warm' : 'hot'}">${esc(st[a.status])}</span></td>
+      return `<tr data-uid="${esc(a.user_id)}" class="${a.status === 'rejected' ? 'muted' : ''}"><td>${esc(a.name)}</td><td dir="ltr">${esc(a.email)}</td><td>${esc(a.contact || '')}</td><td dir="ltr">${esc(a.requested_code || '—')}</td><td><span class="tag ${a.status === 'approved' ? 'bought' : a.status === 'pending' ? 'warm' : 'hot'}">${esc(st[a.status])}</span></td>
         <td dir="ltr">${esc(codes)}</td><td>${hasKey ? '✅' : 'ما دخل للحين'}</td><td>${a.status !== 'approved' ? '<button class="link aok">موافقة</button>' : ''}${a.status !== 'rejected' ? ' · <button class="link ano">رفض</button>' : ''}</td></tr>`;
-    }).join('') || '<tr><td colspan="7" class="small">ما فيه طلبات للحين</td></tr>');
+    }).join('') || '<tr><td colspan="8" class="small">ما فيه طلبات للحين</td></tr>');
   }
   $('affs').addEventListener('click', async (e) => {
     const b = e.target.closest('button'); if (!b) return; const uid = b.closest('tr').dataset.uid;
@@ -280,6 +282,13 @@
     if (status === 'rejected' && !confirm('ترفض هذا المسوّق؟ يوقف وصوله لكل البيانات.')) return;
     try {
       await api('affiliates?user_id=eq.' + uid, { method: 'PATCH', body: JSON.stringify({ status, approved_at: status === 'approved' ? new Date().toISOString() : null }) });
+      const A = DATA.affs.find((x) => x.user_id === uid);
+      if (status === 'approved' && A && A.requested_code) {
+        const r = DATA.refRows.find((x) => x.code === A.requested_code);
+        if (r && r.affiliate_id && r.affiliate_id !== uid) alert('الكود ' + A.requested_code + ' مربوط بمسوّق ثاني، اربطه يدوياً من جدول الروابط');
+        else if (r) await api('ref_links?code=eq.' + encodeURIComponent(A.requested_code), { method: 'PATCH', body: JSON.stringify({ affiliate_id: uid }) });
+        else alert('الكود ' + A.requested_code + ' ما عاد موجود. أنشئه أو اربطه يدوياً.');
+      }
       if (status === 'rejected') await api('ref_links?affiliate_id=eq.' + uid, { method: 'PATCH', body: JSON.stringify({ affiliate_id: null }) });
       load.secured = false; load();
     } catch (err) { alert(err.message); }

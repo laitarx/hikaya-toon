@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; font-src 'self'; style-src 'self'; script-src 'self'; connect-src https://*.supabase.co; object-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
+<meta name="referrer" content="no-referrer">
+<title>حذف بياناتي | حكاية تون</title>
+<link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="admin.css?v=4">
+</head>
+<body>
+<section class="center" id="ask">
+  <form class="card login" id="askForm">
+    <h1>حذف بياناتك</h1>
+    <p class="small">لو كتبت إيميلك ورقمك عندنا قبل الشراء، تقدر تحذفهم هنا نهائياً. نرسل رابط تأكيد لإيميلك عشان نتأكد إنه إيميلك أنت.</p>
+    <label>إيميلك<input name="email" type="email" dir="ltr" autocomplete="email" required></label>
+    <label class="chk"><input name="ok" type="checkbox"> أفهم إن الحذف نهائي وما ينفع التراجع عنه</label>
+    <button class="btn" type="submit">أرسل رابط التأكيد</button>
+    <p class="err" id="askMsg" role="alert"></p>
+  </form>
+</section>
+<section class="center" id="confirm" hidden>
+  <form class="card login" id="confirmForm">
+    <h1>تأكيد الحذف</h1>
+    <p>بنحذف كل بيانات الإيميل: <b dir="ltr" id="who"></b></p>
+    <p class="small">الإيميل والجوال وسجل الطلب. لو اشتريت، يبقى مبلغ الطلب بس بدون أي بيانات تدل عليك (للحسابات).</p>
+    <label>اكتب كلمة <b>احذف</b> للتأكيد<input name="word" autocomplete="off" required></label>
+    <button class="btn danger" type="submit">احذف بياناتي نهائياً</button>
+    <p class="err" id="confirmMsg" role="alert"></p>
+  </form>
+</section>
+<section class="center" id="done" hidden>
+  <div class="card login"><h1>انحذفت ✓</h1><p id="doneText">انحذفت بياناتك من عندنا.</p></div>
+</section>
+<script src="config.js?v=3"></script>
+<script src="delete.js?v=1"></script>
+</body>
+</html>

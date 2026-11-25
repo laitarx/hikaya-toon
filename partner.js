@@ -46,8 +46,9 @@
     try {
       if (mode === 'up') {
         if (!f.name.value.trim()) { $('loginMsg').textContent = 'اكتب اسمك'; return; }
+        if (!/^[a-z0-9_-]{2,32}$/i.test(f.code.value.trim())) { $('loginMsg').textContent = 'اكتب كود رابطك (حروف إنجليزية وأرقام)'; return; }
         if (pw.length < 10) { $('loginMsg').textContent = 'كلمة المرور 10 أحرف أو أكثر'; return; }
-        const j = await auth('signup', { email, password: pw, data: { name: f.name.value.trim(), contact: f.contact.value.trim() } });
+        const j = await auth('signup?redirect_to=' + encodeURIComponent(siteBase + 'partner.html'), { email, password: pw, data: { name: f.name.value.trim(), contact: f.contact.value.trim(), code: f.code.value.trim().toLowerCase() } });
         if (j.access_token) { keep(j); await enter(pw); } else $('loginMsg').textContent = 'وصلك إيميل تأكيد. أكّده، وبعدين ارجع هنا وسجّل دخول.';
         return;
       }
@@ -71,17 +72,28 @@
   async function enter(pw) {
     UID = uidOf(await token());
     ME = await rpc('aff_me');
-    if (!ME) { const m = sess.meta || {}; await rpc('affiliate_apply', { p_name: m.name || 'مسوّق', p_contact: m.contact || '' }); ME = await rpc('aff_me'); }
+    if (!ME) { const m = sess.meta || {}; try { await rpc('affiliate_apply', { p_name: m.name || 'مسوّق', p_contact: m.contact || '', p_code: m.code || '' }); } catch (e) { codeError(e); } ME = await rpc('aff_me'); }
     if (pw) { try { await keys(pw); } catch (e) { console.error(e); } }
+    if (!ME) { $('pendingText').textContent = 'اكتب كود رابطك عشان نكمل طلبك.'; $('codeForm').hidden = false; show('pending'); return; }
     applyTheme(ME.theme || {});
     if (ME.status !== 'approved' || !ME.codes.length) {
       $('pendingText').textContent = ME.status === 'rejected' ? 'للأسف ما انقبل طلبك. لو عندك سؤال تواصل مع صاحب الأداة.'
         : ME.status === 'approved' ? 'انقبل حسابك ✅ باقي يربطك صاحب الأداة برابطك، وبعدها تطلع أرقامك هنا.' : 'صاحب الأداة يراجع طلبك. أول ما يوافق ويربطك برابطك، تطلع لك أرقامك هنا.';
+      $('codeForm').hidden = ME.status !== 'pending'; if (ME.requested_code) $('codeForm').code.value = ME.requested_code;
       show('pending'); return;
     }
     if (!PRIV) { show('unlock'); return; }
     show('app'); load();
   }
+  function codeError(e) { const m = String(e && e.message || e); $('codeMsg').textContent = /not found/.test(m) ? 'الكود هذا مو موجود، تأكد منه من صاحب الأداة' : /taken/.test(m) ? 'الكود هذا مربوط بحساب ثاني' : /confirm/.test(m) ? 'أكّد إيميلك أول' : 'صار خطأ، جرّب مرة ثانية'; }
+  $('codeForm').addEventListener('submit', async (e) => {
+    e.preventDefault(); $('codeMsg').textContent = '';
+    const m = sess.meta || {};
+    try { await rpc('affiliate_apply', { p_name: (ME && ME.name) || m.name || 'مسوّق', p_contact: m.contact || '', p_code: e.target.code.value.trim().toLowerCase() }); $('codeMsg').style.color = 'var(--g)'; $('codeMsg').textContent = 'انحفظ ✓ ينتظر موافقة صاحب الأداة'; ME = await rpc('aff_me'); }
+    catch (err) { $('codeMsg').style.color = ''; codeError(err); }
+  });
+  HKPassword({ panel: $('pwPanel'), API, KEY, token, api, uid: () => UID });
+  $('pwBtn').addEventListener('click', () => { $('pwPanel').hidden = !$('pwPanel').hidden; });
   $('unlockForm').addEventListener('submit', async (e) => {
     e.preventDefault(); $('unlockMsg').textContent = '';
     try { await keys(e.target.password.value); e.target.reset(); show('app'); load(); } catch (_) { $('unlockMsg').textContent = 'كلمة المرور غلط'; }
@@ -150,5 +162,12 @@
   }
   document.addEventListener('click', (e) => { const b = e.target.closest('button.copy'); if (b) navigator.clipboard.writeText(b.dataset.link).then(() => { b.textContent = 'تم النسخ ✓'; }); });
 
+  // back from the confirmation email: the session is in the address hash
+  const hh = new URLSearchParams(location.hash.slice(1));
+  if (hh.get('access_token')) {
+    let meta = {}; try { meta = JSON.parse(atob(hh.get('access_token').split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))).user_metadata || {}; } catch (_) {}
+    save({ at: hh.get('access_token'), rt: hh.get('refresh_token'), exp: Date.now() + (+hh.get('expires_in') || 3600) * 1000 - 60000, meta });
+    history.replaceState(null, '', location.pathname);
+  }
   if (sess) enter().catch(() => { save(null); show('login'); }); else show('login');
 })();
