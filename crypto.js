@@ -40,9 +40,10 @@
     const key = await C.importKey('raw', raw, 'AES-GCM', false, ['encrypt']);
     const ct = await C.encrypt({ name: 'AES-GCM', iv }, key, te.encode(JSON.stringify(obj)));
     const k = {};
-    for (const r of recipients) k[r.kid] = b64(await C.encrypt(RSA, await importPub(r.pub), raw));
+    const kv = {};
+    for (const r of recipients) { k[r.kid] = b64(await C.encrypt(RSA, await importPub(r.pub), raw)); if (r.ver) kv[r.kid] = r.ver; }
     raw.fill(0);
-    return { v: 1, iv: b64(iv), ct: b64(ct), k };
+    return { v: 1, iv: b64(iv), ct: b64(ct), k, kv };
   }
   async function rawKey(enc, kid, priv) { const w = enc && enc.k && enc.k[kid]; if (!w) return null; return new Uint8Array(await C.decrypt(RSA, priv, unb64(w))); }
   async function open(enc, kid, priv) {
@@ -53,10 +54,11 @@
     } catch (_) { return null; }
   }
   // give another reader access to a record I can open (keeps the data itself unchanged)
-  async function share(enc, kid, priv, toKid, toPub) {
+  async function share(enc, kid, priv, toKid, toPub, toVer) {
     const raw = await rawKey(enc, kid, priv); if (!raw) return null;
     const k = Object.assign({}, enc.k, { [toKid]: b64(await C.encrypt(RSA, await importPub(toPub), raw)) });
-    return Object.assign({}, enc, { k });
+    const kv = Object.assign({}, enc.kv || {}); if (toVer) kv[toKid] = toVer;
+    return Object.assign({}, enc, { k, kv });
   }
   async function emailHash(email) { return [...new Uint8Array(await C.digest('SHA-256', te.encode('hk:' + email.trim().toLowerCase())))].map((x) => x.toString(16).padStart(2, '0')).join(''); }
   window.HKCrypto = { newKeyring, unlock, rewrapPrivate, seal, open, share, emailHash };

@@ -9,7 +9,7 @@
   const mins = (s) => { s = Math.round(s || 0); return s < 60 ? s + ' ث' : Math.floor(s / 60) + ' د ' + (s % 60) + ' ث'; };
   const STAGES = ['', 'زار الصفحة', 'تفاعل', 'شاف الفيديو', 'ضغط شراء', 'كتب إيميله ورقمه', 'راح للدفع', 'اشترى'];
   const TYPES = window.HK_TYPES || [];
-  const show = (id) => ['login', 'unlock', 'pending', 'app', 'setup'].forEach((x) => { $(x).hidden = x !== id; });
+  const show = (id) => ['login', 'unlock', 'pending', 'app', 'setup', 'reset'].forEach((x) => { $(x).hidden = x !== id; });
   if (!/^https:\/\/[a-z0-9]+\.supabase\.co$/.test(API) || !KEY) { show('setup'); return; }
   const siteBase = (/^https:\/\//.test(S.siteUrl || '') ? S.siteUrl : 'https://laitarx.github.io/hikaya-toon/').replace(/\/?$/, '/');
 
@@ -94,6 +94,13 @@
   });
   HKPassword({ panel: $('pwPanel'), API, KEY, token, api, uid: () => UID });
   $('pwBtn').addEventListener('click', () => { $('pwPanel').hidden = !$('pwPanel').hidden; });
+  $('newKey').addEventListener('click', async () => {
+    const pw = $('unlockForm').password.value; $('unlockMsg').textContent = '';
+    if (pw.length < 10) { $('unlockMsg').textContent = 'اكتب كلمة مرورك الحالية فوق أول'; return; }
+    if (!confirm('ينشئ مفتاح تشفير جديد بكلمة مرورك الحالية. عملاؤك القدامى يرجعون يطلعون لك بعد ما يفتح صاحب الأداة لوحته. متأكد؟')) return;
+    try { const k = await HKCrypto.newKeyring(pw); await api('keyring?user_id=eq.' + UID, { method: 'PATCH', body: JSON.stringify({ ...k.row, updated_at: new Date().toISOString() }) }); PRIV = k.priv; $('unlockForm').reset(); show('app'); load(); }
+    catch (err) { $('unlockMsg').textContent = err.message; }
+  });
   $('unlockForm').addEventListener('submit', async (e) => {
     e.preventDefault(); $('unlockMsg').textContent = '';
     try { await keys(e.target.password.value); e.target.reset(); show('app'); load(); } catch (_) { $('unlockMsg').textContent = 'كلمة المرور غلط'; }
@@ -169,5 +176,8 @@
     save({ at: hh.get('access_token'), rt: hh.get('refresh_token'), exp: Date.now() + (+hh.get('expires_in') || 3600) * 1000 - 60000, meta });
     history.replaceState(null, '', location.pathname);
   }
-  if (sess) enter().catch(() => { save(null); show('login'); }); else show('login');
+  const recovering = HKRecover({ API, KEY, redirect: location.origin + location.pathname, forgotBtn: $('forgot'), emailField: $('loginForm').email, msg: $('loginMsg'), resetSection: $('reset'),
+    onDone: async (tok, pw) => { keep(tok); await enter(pw); } });
+  if (recovering) show('reset');
+  else if (sess) enter().catch(() => { save(null); show('login'); }); else show('login');
 })();

@@ -79,13 +79,20 @@
     try { await keys(e.target.password.value); if (!PRIV) throw new Error(); e.target.reset(); $('unlock').hidden = true; $('app').hidden = false; load(); }
     catch (_) { $('unlockMsg').textContent = 'كلمة المرور غلط'; }
   });
+  $('newKey').addEventListener('click', async () => {
+    const pw = $('unlockForm').password.value; $('unlockMsg').textContent = '';
+    if (pw.length < 10) { $('unlockMsg').textContent = 'اكتب كلمة مرورك الحالية (اللي دخلت فيها الحين) فوق أول'; return; }
+    if (!confirm('ينشئ مفتاح تشفير جديد بكلمة مرورك الحالية.\nبيانات العملاء المشفّرة بالمفتاح القديم ما تنفتح بعد كذا (العملاء الجدد عادي).\nمتأكد؟')) return;
+    try { const k = await HKCrypto.newKeyring(pw); await api('keyring?user_id=eq.' + UID, { method: 'PATCH', body: JSON.stringify({ ...k.row, updated_at: new Date().toISOString() }) }); PRIV = k.priv; $('unlockForm').reset(); $('unlock').hidden = true; $('app').hidden = false; load(); }
+    catch (err) { $('unlockMsg').textContent = err.message; }
+  });
   $('skipUnlock').addEventListener('click', () => { $('unlock').hidden = true; $('app').hidden = false; load(); });
 
   // readers of a record: every admin + the approved affiliate who owns the code
   function readers(code) {
-    const out = DATA.keyring.filter((k) => DATA.adminIds.has(k.user_id)).map((k) => ({ kid: k.user_id, pub: k.pub }));
+    const out = DATA.keyring.filter((k) => DATA.adminIds.has(k.user_id)).map((k) => ({ kid: k.user_id, pub: k.pub, ver: k.updated_at }));
     const r = DATA.refRows.find((x) => x.code === code); const a = r && r.affiliate_id && DATA.affs.find((x) => x.user_id === r.affiliate_id && x.status === 'approved');
-    const k = a && DATA.keyring.find((x) => x.user_id === a.user_id); if (k) out.push({ kid: k.user_id, pub: k.pub });
+    const k = a && DATA.keyring.find((x) => x.user_id === a.user_id); if (k) out.push({ kid: k.user_id, pub: k.pub, ver: k.updated_at });
     return out;
   }
   // old plaintext leads -> encrypted; and every record shared with whoever should read it now
@@ -105,7 +112,7 @@
     for (const [table, key, rows] of lists) {
       for (const row of rows) {
         let enc = row.enc; let changed = false;
-        for (const r of readers(row.ref)) if (!enc.k[r.kid]) { const e2 = await HKCrypto.share(enc, UID, PRIV, r.kid, r.pub); if (e2) { enc = e2; changed = true; } }
+        for (const r of readers(row.ref)) if (r.kid !== UID && (!enc.k[r.kid] || !enc.kv || enc.kv[r.kid] !== r.ver)) { const e2 = await HKCrypto.share(enc, UID, PRIV, r.kid, r.pub, r.ver); if (e2) { enc = e2; changed = true; } }
         if (changed) { await api(table + '?' + key + '=eq.' + encodeURIComponent(row[key]), { method: 'PATCH', body: JSON.stringify({ enc }) }); n++; }
       }
     }
@@ -128,7 +135,7 @@
       api(`sales?select=sale_id,email,enc,price_cents,currency,ref,refunded,is_test,created_at&created_at=gte.${q}&order=created_at.desc&limit=5000`),
       api('v_ref_stats?select=*&order=revenue_cents.desc'),
       api(`events?select=type,data&at=gte.${q}&type=in.(section,faq_open,type_view)&limit=20000`),
-      api('keyring?select=user_id,pub'), api('admins?select=user_id'), api('affiliates?select=*&order=created_at.desc'), api('ref_links?select=code,affiliate_id'),
+      api('keyring?select=user_id,pub,updated_at'), api('admins?select=user_id'), api('affiliates?select=*&order=created_at.desc'), api('ref_links?select=code,affiliate_id'),
     ]);
     DATA = { sessions, visitors, leads, sales, refs, events, keyring, adminIds: new Set(admins.map((a) => a.user_id)), affs, refRows };
     if (PRIV && !load.secured) { load.secured = true; try { if (await secure()) return load(); } catch (e) { console.error(e); } }
@@ -306,5 +313,8 @@
   });
 
   // ------------------------------------------------------------ start
-  if (sess) enter().catch((e) => { console.error(e); save(null); $('login').hidden = false; $('app').hidden = true; }); else $('login').hidden = false;
+  const recovering = HKRecover({ API, KEY, redirect: location.origin + location.pathname, forgotBtn: $('forgot'), emailField: $('loginForm').email, msg: $('loginMsg'), resetSection: $('reset'),
+    onDone: async (tok, pw) => { keep(tok); await enter(pw); } });
+  if (recovering) $('login').hidden = true;
+  else if (sess) enter().catch((e) => { console.error(e); save(null); $('login').hidden = false; $('app').hidden = true; }); else $('login').hidden = false;
 })();
