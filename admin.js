@@ -140,16 +140,20 @@
     if (!load.rem) { load.rem = true; if (PRIV && ($('loginForm').remember.checked || $('unlockForm').remember.checked) && !DEV.get()) await rememberDevice(); devLabel(); }
     const days = +$('range').value; const since = new Date(Date.now() - days * 864e5).toISOString();
     const q = encodeURIComponent(since);
-    const [sessions, visitors, leads, sales, refs, events, keyring, admins, affs, refRows] = await Promise.all([
+    const salesCols = 'sale_id,email,enc,price_cents,currency,ref,refunded,is_test,created_at';
+    const [sessions, visitors, leads, sales, refs, events, keyring, admins, affs, refRows, subs] = await Promise.all([
       api(`sessions?select=id,visitor_id,ref,started_at,duration_sec,max_scroll,max_stage,video_sec&started_at=gte.${q}&limit=20000`),
       api(`visitors?select=id,referrer,utm,device,first_ref&last_seen=gte.${q}&limit=20000`),
       api(`v_lead_profiles?select=*&created_at=gte.${q}&order=created_at.desc&limit=5000`),
-      api(`sales?select=sale_id,email,enc,price_cents,currency,ref,refunded,is_test,created_at&created_at=gte.${q}&order=created_at.desc&limit=5000`),
+      // product/kind arrive with the subscription migration (003); before it, the old columns still load
+      api(`sales?select=${salesCols},product,kind,subscription_id&created_at=gte.${q}&order=created_at.desc&limit=5000`)
+        .catch(() => api(`sales?select=${salesCols}&created_at=gte.${q}&order=created_at.desc&limit=5000`)),
       api('v_ref_stats?select=*&order=revenue_cents.desc'),
       api(`events?select=type,data&at=gte.${q}&type=in.(section,faq_open,type_view)&limit=20000`),
       api('keyring?select=user_id,pub,updated_at'), api('admins?select=user_id'), api('affiliates?select=*&order=created_at.desc'), api('ref_links?select=code,affiliate_id'),
+      api('v_subscriptions?select=subscription_id,ref,status,is_test,last_price_cents,paid_cents,started_at&limit=20000').catch(() => []),
     ]);
-    DATA = { sessions, visitors, leads, sales, refs, events, keyring, adminIds: new Set(admins.map((a) => a.user_id)), affs, refRows };
+    DATA = { sessions, visitors, leads, sales, refs, events, keyring, adminIds: new Set(admins.map((a) => a.user_id)), affs, refRows, subs: subs.filter((s) => !s.is_test) };
     if (PRIV && !load.secured) { load.secured = true; try { if (await secure()) return load(); } catch (e) { console.error(e); } }
     await decryptAll();
     render();
@@ -161,10 +165,19 @@
     el.innerHTML = rows.map(([label, n, extra]) => `<div class="bar"><span class="lbl">${esc(label)}</span><span class="track"><span data-w="${(n / max) * 100}"></span></span><span class="num">${fmt(n)}${total ? ' · ' + Math.round((n / Math.max(1, total)) * 100) + '%' : ''}${extra ? ' · ' + esc(extra) : ''}</span></div>`).join('') || '<p class="small">ما فيه بيانات للحين</p>';
   }
 
+  // what a sales row is: the $49 tool, a free-trial start, the first paid month, or a monthly renewal
+  function saleKind(s) {
+    if (s.product !== 'subscription') return 'شراء الأداة';
+    return s.kind === 'trial' ? 'بداية تجربة مجانية' : s.kind === 'renewal' ? 'تجديد شهري' : 'اشتراك (أول دفعة)';
+  }
+
   function render() {
     const { sessions, visitors, leads, sales, refs, events } = DATA;
-    const real = sales.filter((s) => !s.is_test && !s.refunded);
+    const real = sales.filter((s) => !s.is_test && !s.refunded && s.kind !== 'trial'); // a free-trial start is not a sale
     const revenue = real.reduce((a, s) => a + (s.price_cents || 0), 0) / 100;
+    const subs = DATA.subs || [];
+    const active = subs.filter((s) => s.status === 'active');
+    const mrr = active.reduce((a, s) => a + (s.last_price_cents || 0), 0) / 100;
     const uniq = new Set(sessions.map((s) => s.visitor_id)).size;
     const avg = sessions.length ? sessions.reduce((a, s) => a + s.duration_sec, 0) / sessions.length : 0;
     // per-visitor best stage
@@ -174,6 +187,8 @@
     const kpi = [
       ['زوار', uniq], ['زيارات', sessions.length], ['متوسط الوقت', mins(avg)], ['ضغطوا شراء', reached(4)],
       ['عملاء محتملين', leads.length], ['مبيعات', real.length], ['الدخل', '$' + revenue.toFixed(0)], ['تحويل زائر ← شراء', uniq ? ((real.length / uniq) * 100).toFixed(1) + '%' : '0%'],
+      ['مشتركين فعّالين', active.length], ['بالتجربة المجانية', subs.filter((s) => s.status === 'trial').length],
+      ['دخل شهري متكرر', '$' + mrr.toFixed(0)], ['اشتراكات انتهت', subs.filter((s) => s.status === 'ended').length],
     ];
     $('kpis').innerHTML = kpi.map(([l, v]) => `<div class="kpi"><b>${esc(typeof v === 'number' ? fmt(v) : v)}</b><span>${esc(l)}</span></div>`).join('');
 
@@ -206,8 +221,8 @@
     const dev = { mobile: 0, desktop: 0 }; visitors.forEach((v) => { if (dev[v.device] != null) dev[v.device]++; });
     $('sources').innerHTML = '<tr><th>المصدر</th><th>زوار</th></tr>' + Object.entries(src).sort((a, b) => b[1] - a[1]).slice(0, 15).map(([k, n]) => `<tr><td>${esc(k)}</td><td>${fmt(n)}</td></tr>`).join('') +
       `<tr><td class="small">جوال / كمبيوتر</td><td class="small">${fmt(dev.mobile)} / ${fmt(dev.desktop)}</td></tr>`;
-    $('sales').innerHTML = '<tr><th>التاريخ</th><th>الإيميل</th><th>المبلغ</th><th>الرابط</th></tr>' + sales.slice(0, 30).map((s) =>
-      `<tr class="${s.refunded || s.is_test ? 'muted' : ''}"><td>${esc(new Date(s.created_at).toLocaleString('ar'))}</td><td dir="ltr">${esc(s.email)}</td><td>${esc(((s.price_cents || 0) / 100).toFixed(2) + ' ' + (s.currency || ''))}${s.refunded ? ' (مسترجع)' : ''}${s.is_test ? ' (تجربة)' : ''}</td><td>${esc(s.ref || '—')}</td></tr>`).join('');
+    $('sales').innerHTML = '<tr><th>التاريخ</th><th>الإيميل</th><th>النوع</th><th>المبلغ</th><th>الرابط</th></tr>' + sales.slice(0, 30).map((s) =>
+      `<tr class="${s.refunded || s.is_test ? 'muted' : ''}"><td>${esc(new Date(s.created_at).toLocaleString('ar'))}</td><td dir="ltr">${esc(s.email)}</td><td>${esc(saleKind(s))}</td><td>${esc(((s.price_cents || 0) / 100).toFixed(2) + ' ' + (s.currency || ''))}${s.refunded ? ' (مسترجع)' : ''}${s.is_test ? ' (اختبار)' : ''}</td><td>${esc(s.ref || '—')}</td></tr>`).join('');
 
     const count = (type, key) => { const m = {}; events.filter((e) => e.type === type).forEach((e) => { const k = e.data && e.data[key]; if (k) m[k] = (m[k] || 0) + 1; }); return Object.entries(m).sort((a, b) => b[1] - a[1]); };
     bars($('sections'), count('section', 't'), sessions.length);
@@ -247,13 +262,13 @@
   $('refType').innerHTML = TYPES.map((t) => `<option value="${t.key}">${esc(t.icon + ' ' + t.name)}</option>`).join('');
   const siteBase = (/^https:\/\//.test(S.siteUrl || '') ? S.siteUrl : 'https://laitarx.github.io/hikaya-toon/').replace(/\/?$/, '/');
   function renderRefs() {
-    $('refs').innerHTML = '<tr><th>المسوّق</th><th>الرابط</th><th>النوع</th><th>حسابه</th><th>زوار</th><th>ضغطوا شراء</th><th>عملاء</th><th>مبيعات</th><th>الدخل</th><th>عمولته</th><th>تحويل</th><th></th></tr>' +
+    $('refs').innerHTML = '<tr><th>المسوّق</th><th>الرابط</th><th>النوع</th><th>حسابه</th><th>زوار</th><th>ضغطوا شراء</th><th>عملاء</th><th>مبيعات</th><th>مشتركين</th><th>الدخل</th><th>عمولته</th><th>تحويل</th><th></th></tr>' +
       DATA.refs.map((r) => {
         const rev = (r.revenue_cents || 0) / 100; const link = siteBase + '?ref=' + r.code;
         return `<tr class="${r.active ? '' : 'muted'}" data-code="${esc(r.code)}"><td>${esc(r.name)}</td><td dir="ltr"><button class="link copy" data-link="${esc(link)}">${esc(link.replace(/^https?:\/\//, ''))} 📋</button></td>
         <td><select class="rtype"><option value="">تحدي (افتراضي)</option>${TYPES.map((t) => `<option value="${t.key}" ${t.key === r.default_type ? 'selected' : ''}>${esc(t.name)}</option>`).join('')}</select></td>
         <td><select class="raff"><option value="">—</option>${DATA.affs.filter((a) => a.status === 'approved').map((a) => `<option value="${esc(a.user_id)}" ${a.user_id === r.affiliate_id ? 'selected' : ''}>${esc(a.name)}</option>`).join('')}</select></td>
-        <td>${fmt(r.visitors)}</td><td>${fmt(r.buy_clicks)}</td><td>${fmt(r.leads)}</td><td>${fmt(r.sales)}</td><td>$${rev.toFixed(0)}</td><td>$${((rev * r.commission_pct) / 100).toFixed(0)} (${esc(+r.commission_pct)}%) <button class="link pct" title="تعديل النسبة">✏️</button></td>
+        <td>${fmt(r.visitors)}</td><td>${fmt(r.buy_clicks)}</td><td>${fmt(r.leads)}</td><td>${fmt(r.sales)}</td><td title="فعّالين · بالتجربة">${fmt(r.subs_active)}${r.subs_trial ? ' <span class="small">+' + fmt(r.subs_trial) + ' تجربة</span>' : ''}</td><td>$${rev.toFixed(0)}</td><td>$${((rev * r.commission_pct) / 100).toFixed(0)} (${esc(+r.commission_pct)}%)${r.monthly_cents ? ' <span class="small">· شهرياً $' + ((r.monthly_cents * r.commission_pct) / 10000).toFixed(2) + '</span>' : ''} <button class="link pct" title="تعديل النسبة">✏️</button></td>
         <td>${r.visitors ? ((r.sales / r.visitors) * 100).toFixed(1) + '%' : '—'}</td><td><button class="link toggle">${r.active ? 'إيقاف' : 'تفعيل'}</button> · <button class="link del">حذف</button></td></tr>`;
       }).join('');
   }

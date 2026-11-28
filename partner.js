@@ -157,16 +157,20 @@
 
   function render(st, leads, sales) {
     $('hello').textContent = 'أهلاً ' + (ME.name || '');
+    // subscribers you brought pay every month, and you earn your % on every payment, not only the first
     const kpi = [['عمولتك', money(st.commission_cents), true], ['مبيعات', fmt(st.sales)], ['زوار', fmt(st.visitors)], ['عملاء محتملين', fmt(st.leads)],
       ['متوسط الوقت', mins(st.avg_sec)], ['تحويل', st.visitors ? ((st.sales / st.visitors) * 100).toFixed(1) + '%' : '0%']];
+    if (st.subs_active != null) kpi.push(['مشتركينك الفعّالين', fmt(st.subs_active)], ['بالتجربة المجانية', fmt(st.subs_trial)],
+      ['عمولتك الشهرية المتوقعة', money(st.monthly_commission_cents)], ['تجديدات شهرية', fmt(st.renewals)]);
     $('kpis').innerHTML = kpi.map(([l, v, big]) => `<div class="kpi ${big ? 'big' : ''}"><b>${esc(v)}</b><span>${esc(l)}</span></div>`).join('');
     const typeName = (k) => (TYPES.find((t) => t.key === k) || TYPES[0] || {}).name || '';
-    $('byCode').innerHTML = '<tr><th>رابطك</th><th>النوع اللي يشوفه زوارك</th><th>النسبة</th><th>زوار</th><th>مبيعات</th><th>عمولتك</th></tr>' + st.by_code.map((c) => {
+    $('byCode').innerHTML = '<tr><th>رابطك</th><th>النوع اللي يشوفه زوارك</th><th>النسبة</th><th>زوار</th><th>مبيعات</th><th>مشتركين</th><th>عمولتك</th></tr>' + st.by_code.map((c) => {
       const me = ME.codes.find((x) => x.code === c.code) || {}; const link = siteBase + '?ref=' + c.code;
-      return `<tr><td dir="ltr"><button class="link copy" data-link="${esc(link)}">${esc(link.replace(/^https?:\/\//, ''))} 📋</button></td><td>${esc(typeName(me.type))}</td><td>${esc(+c.pct)}%</td><td>${fmt(c.visitors)}</td><td>${fmt(c.sales)}</td><td>${money(c.commission_cents)}</td></tr>`;
+      return `<tr><td dir="ltr"><button class="link copy" data-link="${esc(link)}">${esc(link.replace(/^https?:\/\//, ''))} 📋</button></td><td>${esc(typeName(me.type))}</td><td>${esc(+c.pct)}%</td><td>${fmt(c.visitors)}</td><td>${fmt(c.sales)}</td><td>${fmt(c.subs_active || 0)}</td><td>${money(c.commission_cents)}</td></tr>`;
     }).join('');
-    $('sales').innerHTML = '<tr><th>التاريخ</th><th>العميل</th><th>المبلغ</th><th>عمولتك</th></tr>' + (sales.map((x) =>
-      `<tr class="${x.refunded ? 'muted' : ''}"><td>${esc(new Date(x.created_at).toLocaleString('ar'))}</td><td dir="ltr">${esc(x.email || '—')}</td><td>${money(x.price_cents)}${x.refunded ? ' (مسترجع)' : ''}</td><td>${x.refunded ? '—' : money(x.commission_cents)}</td></tr>`).join('') || '<tr><td colspan="4" class="small">ما فيه مبيعات بهذي الفترة للحين</td></tr>');
+    const kindName = (x) => x.product !== 'subscription' ? 'شراء الأداة' : x.kind === 'trial' ? 'بداية تجربة (بدون عمولة)' : x.kind === 'renewal' ? 'تجديد شهري' : 'اشتراك (أول دفعة)';
+    $('sales').innerHTML = '<tr><th>التاريخ</th><th>العميل</th><th>النوع</th><th>المبلغ</th><th>عمولتك</th></tr>' + (sales.map((x) =>
+      `<tr class="${x.refunded || x.kind === 'trial' ? 'muted' : ''}"><td>${esc(new Date(x.created_at).toLocaleString('ar'))}</td><td dir="ltr">${esc(x.email || '—')}</td><td>${esc(kindName(x))}</td><td>${money(x.price_cents)}${x.refunded ? ' (مسترجع)' : ''}</td><td>${x.refunded ? '—' : money(x.commission_cents)}</td></tr>`).join('') || '<tr><td colspan="5" class="small">ما فيه مبيعات بهذي الفترة للحين</td></tr>');
     // daily visitors
     const days = Math.min(+$('range').value, 30); const map = new Map(st.daily.map((d) => [d.d, d.v])); const arr = [];
     for (let i = days - 1; i >= 0; i--) { const d = new Date(Date.now() - i * 864e5).toISOString().slice(0, 10); arr.push([d, map.get(d) || 0]); }

@@ -107,17 +107,24 @@
   const leadModal = document.getElementById('leadModal');
   const form = document.getElementById('leadForm');
   const msg = document.getElementById('leadMsg');
+  // two offers: data-buy (the $49 tool) and data-buy="sub" (the $5/month subscription, S.gumroadSubUrl).
+  // Both carry the same invite code and lead id, so the affiliate gets the sale either way.
+  const subUrl = (S.gumroadSubUrl || '').trim();
+  const okSub = /^https:\/\/([a-z0-9-]+\.)?gumroad\.com\//i.test(subUrl);
+  let wantSub = false;
   function checkoutUrl(leadId) {
-    const u = new URL(url); u.searchParams.set('wanted', 'true');
+    const u = new URL(wantSub ? subUrl : url); u.searchParams.set('wanted', 'true');
     if (ref) u.searchParams.set('ref', ref);
     if (leadId) u.searchParams.set('lid', leadId);
     return u.toString();
   }
   document.querySelectorAll('[data-buy]').forEach((a) => {
-    if (!okUrl) { a.classList.add('soon'); a.removeAttribute('href'); a.firstChild.textContent = 'قريباً · '; return; }
+    const sub = a.dataset.buy === 'sub';
+    if (!(sub ? okSub : okUrl)) { a.classList.add('soon'); a.removeAttribute('href'); a.firstChild.textContent = 'قريباً · '; return; }
     a.href = '#buy';
     a.addEventListener('click', (e) => {
-      e.preventDefault(); raise(4); ev('buy_click', { where: a.closest('section,header')?.className || '' });
+      wantSub = sub;
+      e.preventDefault(); raise(4); ev('buy_click', { where: a.closest('section,header')?.className || '', offer: sub ? 'sub' : 'one-time' });
       if (!tracking) { location.href = checkoutUrl(null); return; }
       leadModal.hidden = false; ev('lead_form_open'); setTimeout(() => form.email.focus(), 50);
     });
